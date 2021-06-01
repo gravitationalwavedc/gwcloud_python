@@ -35,12 +35,12 @@ class GWCloud:
         return self.client.request(query=query, variables=variables)
 
     def get_preferred_job_list(self):
-        return self._get_public_jobs(search="preferred")
+        return self._get_public_jobs(search="preferred", time_range="Any time")
 
-    def _get_public_jobs(self, search="", time_range=""):
+    def _get_public_jobs(self, search="", time_range="Any time", number=100):
         query = """
-            query ($search: String, $timeRange: String){
-                publicBilbyJobs (search: $search, timeRange: $timeRange) {
+            query ($search: String, $timeRange: String, $first: Int){
+                publicBilbyJobs (search: $search, timeRange: $timeRange, first: $first) {
                     edges {
                         node {
                             id
@@ -55,11 +55,13 @@ class GWCloud:
 
         variables = {
             "search": search,
-            "timeRange": time_range
+            "timeRange": time_range,
+            "first": number
         }
 
-        
-        return [BilbyJob(**job['node']) for job in self.client.request(query=query, variables=variables)['publicBilbyJobs']['edges']]
+        data, errors = self.client.request(query=query, variables=variables)
+
+        return [BilbyJob(**job['node']) for job in data['publicBilbyJobs']['edges']], errors
 
 
     def _get_job_by_id(self, id):
@@ -77,7 +79,9 @@ class GWCloud:
             "id": id
         }
 
-        return BilbyJob(**self.client.request(query=query, variables=variables)['bilbyJob'])
+        data, errors = self.client.request(query=query, variables=variables)
+
+        return BilbyJob(**data['bilbyJob']), errors
 
     def _get_user_jobs(self):
         query = """
@@ -94,4 +98,7 @@ class GWCloud:
                 }
             }
         """
-        return [BilbyJob(**job['node']) for job in self.client.request(query=query)['bilbyJobs']['edges']]
+        
+        data, errors = self.client.request(query=query)
+
+        return [BilbyJob(**job['node']) for job in data['bilbyJobs']['edges']], errors
