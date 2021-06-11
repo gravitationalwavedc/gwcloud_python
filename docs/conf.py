@@ -12,7 +12,10 @@
 #
 import os
 import sys
-from importlib.metadata import metadata
+try:
+    from importlib.metadata import metadata
+except ModuleNotFoundError:
+    from importlib_metadata import metadata
 
 sys.path.insert(0, os.path.abspath('../gwcloud_python/'))
 

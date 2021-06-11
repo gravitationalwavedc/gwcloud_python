@@ -10,6 +10,7 @@ gwdc-python = "^0.1.0"
 requests = "^2.25.1"
 jwt = "^1.2.0"
 graphene-file-upload = "^1.3.0"
+importlib-metadata = "^4.5.0"
 
 [tool.poetry.dev-dependencies]
 gwdc-python = {path = "../gwdc-python/", develop = true}
