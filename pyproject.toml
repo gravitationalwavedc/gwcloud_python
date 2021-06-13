@@ -11,6 +11,11 @@ requests = "^2.25.1"
 jwt = "^1.2.0"
 graphene-file-upload = "^1.3.0"
 importlib-metadata = "^4.5.0"
+Sphinx = {version = "^4.0.2", optional = true}
+sphinx-rtd-theme = {version = "^0.5.2", optional = true}
+
+[tool.poetry.extras]
+docs = ["Sphinx", "sphinx-rtd-theme"]
 
 [tool.poetry.dev-dependencies]
 gwdc-python = {path = "../gwdc-python/", develop = true}
@@ -18,8 +23,6 @@ pytest = "^5.2"
 requests-mock = "^1.8.0"
 pyflakes = "^2.3.1"
 flake8 = "^3.9.2"
-Sphinx = "^4.0.2"
-sphinx-rtd-theme = "^0.5.2"
 coverage = "^5.5"
 pytest-mock = "^3.6.1"
 pytest-cov = "^2.12.1"
