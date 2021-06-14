@@ -46,10 +46,10 @@ class BilbyJob:
         file_ids, file_paths = [], []
 
         for f in file_list:
-            file_ids.append(f['downloadId'])
+            file_ids.append(f['downloadToken'])
             file_paths.append(f['path'])
 
-        files = self.get_files_by_id(file_ids)
+        files = self.get_files_by_tokens(file_ids)
 
         return list(zip(file_paths, files))
 
@@ -74,35 +74,39 @@ class BilbyJob:
         """
         return self.client._get_files_by_job_id(self.job_id)
 
-    def get_file_by_id(self, file_id):
+    def get_file_by_token(self, file_token):
         """Get the contents of a file
 
         Parameters
         ----------
-        file_id : str
-            Download id for the desired file
+        file_token : str
+            Download token for the desired file
 
         Returns
         -------
         bytes
             Content of the file
         """
-        return self.client._get_file_by_id(file_id)
+        download_id = self.client._get_download_id_from_token(self.job_id, file_token)
 
-    def get_files_by_id(self, file_ids):
+        return self.client._get_file_by_id(download_id)
+
+    def get_files_by_tokens(self, file_tokens):
         """Get the contents of files
 
         Parameters
         ----------
-        file_ids : list
-            List of download ids
+        file_tokens : list
+            List of download tokens
 
         Returns
         -------
         list
             Contents of the files
         """
-        return self.client._get_files_by_id(file_ids)
+        download_ids = self.client._get_download_ids_from_tokens(self.job_id, file_tokens)
+
+        return self.client._get_files_by_id(download_ids)
 
     def get_default_file_list(self):
         """Get information for the default files associated with this job

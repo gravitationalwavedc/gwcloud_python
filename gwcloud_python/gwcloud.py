@@ -168,7 +168,7 @@ class GWCloud:
                         path
                         isDir
                         fileSize
-                        downloadId
+                        downloadToken
                     }
                 }
             }
@@ -195,9 +195,64 @@ class GWCloud:
         return request.content
 
     def _get_files_by_id(self, file_ids):
+        result = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             files = executor.map(self._get_file_by_id, file_ids)
             for i, f in enumerate(files):
-                logger.info(f'File {i+1} of {len(file_ids)} downloaded!')
+                logger.info(f'File {i+1} of {len(file_ids)} downloaded! Filesize: {len(f)}')
+                result.append(f)
 
-        return files
+        return result
+
+    def _get_download_id_from_token(self, job_id, file_token):
+        """Get a single file download id for a file download token
+
+        Parameters
+        ----------
+        job_id : str
+            Job id which owns the file token
+
+        file_token : str
+            Download token for the desired file
+
+        Returns
+        -------
+        str
+            Download id for the desired file
+        """
+        return self._get_download_ids_from_tokens(job_id, [file_token])[0]
+
+    def _get_download_ids_from_tokens(self, job_id, file_tokens):
+        """Get many file download ids for a list of file download tokens
+
+        Parameters
+        ----------
+        job_id : str
+            Job id which owns the file token
+
+        file_tokens : list
+            Download tokens for the desired files
+
+        Returns
+        -------
+        list
+            List of download ids for the desired files
+        """
+        query = """
+            mutation ResultFileMutation($input: GenerateFileDownloadIdsInput!) {
+                generateFileDownloadIds(input: $input) {
+                    result
+                }
+            }
+        """
+
+        variables = {
+            "input": {
+                "jobId": job_id,
+                "downloadTokens": file_tokens
+            }
+        }
+
+        data, errors = self.client.request(query=query, variables=variables)
+
+        return data['generateFileDownloadIds']['result']
