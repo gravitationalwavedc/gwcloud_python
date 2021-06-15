@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 from .utils import identifiers, write_file_at_path
 
@@ -29,7 +29,7 @@ class BilbyJob:
     kwargs : dict, optional
         Extra arguments, stored in `other` attribute
     """
-    client: object
+    client: object = field(repr=False)
     job_id: str
     name: str
     description: str

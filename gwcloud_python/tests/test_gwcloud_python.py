@@ -78,7 +78,7 @@ def user_jobs(multi_job_request):
 def test_get_job_by_id(single_job_request):
     gwc = GWCloud(token='my_token')
 
-    job = gwc._get_job_by_id('job_id')
+    job = gwc.get_job_by_id('job_id')
 
     assert job.job_id == single_job_request["id"]
     assert job.name == single_job_request["name"]

@@ -59,7 +59,9 @@ class GWCloud:
         query = """
             mutation NewBilbyJobFromIniString($input: BilbyJobFromIniStringMutationInput!){
                 newBilbyJobFromIniString (input: $input) {
-                    result
+                    result {
+                        jobId
+                    }
                 }
             }
         """
@@ -79,7 +81,9 @@ class GWCloud:
             }
         }
 
-        return self.client.request(query=query, variables=variables)
+        data, errors = self.client.request(query=query, variables=variables)
+
+        return data['newBilbyJobFromIniString']['result']['jobId']
 
     def get_preferred_job_list(self):
         """Get list of public Bilby jobs corresponding to a search of "preferred" and a time_range of "Any time"
@@ -120,7 +124,19 @@ class GWCloud:
 
         return [self._get_job_model_from_query(job['node']) for job in data['publicBilbyJobs']['edges']]
 
-    def _get_job_by_id(self, job_id):
+    def get_job_by_id(self, job_id):
+        """Get a Bilby job instance corresponding to a specific job ID
+
+        Parameters
+        ----------
+        job_id : str
+            ID of job to obtain
+
+        Returns
+        -------
+        BilbyJob
+            BilbyJob instance corresponding to the input ID
+        """
         query = """
             query ($id: ID!){
                 bilbyJob (id: $id) {
