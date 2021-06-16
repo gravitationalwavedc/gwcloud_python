@@ -13,7 +13,7 @@ Welcome to the GWCloud API documentation!
    :caption: Contents:
    
    gettingstarted
-   examples
+   usage/index
 
 
 

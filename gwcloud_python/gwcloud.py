@@ -37,8 +37,8 @@ class GWCloud:
     def __init__(self, token, endpoint=GWCLOUD_ENDPOINT):
         self.client = GWDC(token=token, endpoint=endpoint)
 
-    def start_bilby_job(self, job_name, job_description, private, ini_string):
-        """Submit the parameters required to start a Bilby job
+    def start_bilby_job_from_string(self, job_name, job_description, private, ini_string):
+        """Submit the parameters required to start a Bilby job, using the contents of an .ini file
 
         Parameters
         ----------
@@ -84,6 +84,30 @@ class GWCloud:
         data, errors = self.client.request(query=query, variables=variables)
 
         return data['newBilbyJobFromIniString']['result']['jobId']
+
+    def start_bilby_job_from_file(self, job_name, job_description, private, ini_file):
+        """Submit the parameters required to start a Bilby job, using an .ini file
+
+        Parameters
+        ----------
+        job_name : str
+            Name of the job to be created
+        job_description : str
+            Description of the job to be created
+        private : bool
+            True if job should be private, False if public
+        ini_file : str or Path
+            Path to an .ini file for running a Bilby job
+
+        Returns
+        -------
+        str
+            Message received from server after job submission
+        """
+        ini_file = Path(ini_file)
+        with ini_file.open() as f:
+            ini_string = f.read().strip()
+            return self.start_bilby_job_from_string(job_name, job_description, private, ini_string)
 
     def get_preferred_job_list(self):
         """Get list of public Bilby jobs corresponding to a search of "preferred" and a time_range of "Any time"
