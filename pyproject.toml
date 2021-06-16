@@ -1,8 +1,13 @@
 [tool.poetry]
 name = "gwcloud-python"
-version = "0.2.1"
+version = "0.2.2"
 description = "Wrapper of GWDC API, used for interacting with the GWCloud endpoints"
 authors = ["Thomas Reichardt <treichardt@swin.edu.au>"]
+license = "MIT"
+readme = "README.rst"
+documentation = "https://gwcloud-python.readthedocs.io/en/latest/"
+repository = "https://github.com/gravitationalwavedc/gwcloud_python"
+include = ["LICENSE",]
 
 [tool.poetry.dependencies]
 python = "^3.6"

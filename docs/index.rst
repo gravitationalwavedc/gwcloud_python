@@ -6,7 +6,9 @@
 
 Welcome to the GWCloud API documentation!
 =========================================
-.. include :: README.rst
+
+This documentation contains information about the package `gwcloud-python`.
+This package can be used to interact with the Bilby module of GWCloud, allowing Bilby job submission and manipulation from Python scripts.
 
 .. toctree::
    :maxdepth: 2
