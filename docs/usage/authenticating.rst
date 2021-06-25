@@ -1,7 +1,7 @@
 Authenticating with the API Token
 =================================
 
-Most scripts involving the GWCloud API will be started by using you API token to authenticate with the GWCloud service.
+Most scripts involving the GWCloud API will be started by using your :ref:`API Token <api-token-label>` to authenticate with the GWCloud service.
 
 ::
 
@@ -9,4 +9,4 @@ Most scripts involving the GWCloud API will be started by using you API token to
 
     gwc = GWCloud(token='my_unique_gwcloud_api_token')
 
-By creating an instance of the GWCloud class with your API Token, you are able to use this instance to interact with the Bilby service.
+An instance of the GWCloud class initialised with your token will provide an interface to the GWCloud service, enabling you to manipulate jobs and their results as you might with the GWCloud UI.

@@ -16,6 +16,7 @@ This package can be used to interact with the Bilby module of GWCloud, allowing 
    
    gettingstarted
    usage/index
+   api/index
 
 
 
@@ -24,4 +25,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

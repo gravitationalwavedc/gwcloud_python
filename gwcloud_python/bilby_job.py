@@ -18,7 +18,7 @@ class BilbyJob:
 
     Parameters
     ----------
-    client : GWCloud
+    client : ~gwcloud_python.gwcloud.GWCloud
         A reference to the GWCloud object instance from which the BilbyJob was created
     job_id : str
         The id of the Bilby job, required to obtain the files associated with it

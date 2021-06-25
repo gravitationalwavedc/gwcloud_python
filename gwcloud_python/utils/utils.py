@@ -44,6 +44,20 @@ def remove_path_anchor(path):
 
 
 def rename_dict_keys(input_dict, key_sets):
+    """Renames the keys in a dictionary
+
+    Parameters
+    ----------
+    input_dict : dict
+        Dictionary for which to change the keys
+    key_sets : list
+        list of tuples of the format `(old_key, new_key)`
+
+    Returns
+    -------
+    dict
+        Copy of `input_dict` with old keys subbed for new keys
+    """
     output_dict = input_dict.copy()
     for old_key, new_key in key_sets:
         output_dict[new_key] = output_dict.pop(old_key)

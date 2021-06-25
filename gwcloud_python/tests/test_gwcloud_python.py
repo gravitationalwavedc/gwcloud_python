@@ -9,9 +9,7 @@ def setup_mock_gwdc(mocker):
             pass
 
         def mock_request(self, query, variables=None, headers=None):
-            data = request_data
-            errors = None
-            return data, errors
+            return request_data
 
         mocker.patch('gwdc_python.gwdc.GWDC.__init__', mock_init)
         mocker.patch('gwdc_python.gwdc.GWDC.request', mock_request)

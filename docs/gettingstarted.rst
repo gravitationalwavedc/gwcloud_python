@@ -10,6 +10,9 @@ You will require Python 3.6+ to be able to use gwcloud-python. The recommended w
 
     pip install gwcloud-python
 
+
+.. _api-token-label:
+
 API Token
 ---------
 

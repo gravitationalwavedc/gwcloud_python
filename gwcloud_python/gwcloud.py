@@ -81,9 +81,9 @@ class GWCloud:
             }
         }
 
-        data, errors = self.client.request(query=query, variables=variables)
-
-        return data['newBilbyJobFromIniString']['result']['jobId']
+        data = self.client.request(query=query, variables=variables)
+        job_id = data['newBilbyJobFromIniString']['result']['jobId']
+        return self.get_job_by_id(job_id)
 
     def start_bilby_job_from_file(self, job_name, job_description, private, ini_file):
         """Submit the parameters required to start a Bilby job, using an .ini file
@@ -117,12 +117,29 @@ class GWCloud:
         list
             List of BilbyJob instances
         """
-        return self._get_public_jobs(search="preferred", time_range="Any time")
+        return self.get_public_job_list(search="preferred lasky", time_range="Any time")
 
     def _get_job_model_from_query(self, query_data):
         return BilbyJob(client=self, **rename_dict_keys(query_data, [('id', 'job_id')]))
 
-    def _get_public_jobs(self, search="", time_range="Any time", number=100):
+    def get_public_job_list(self, search="", time_range="Any time", number=100):
+        """Obtains a list of public Bilby jobs, filtering based on the search terms
+        and the time range within which the job was created.
+
+        Parameters
+        ----------
+        search : str, optional
+            Search terms by which to fileter public job list, by default ""
+        time_range : str, optional
+            Time range by which to filter job list, by default "Any time"
+        number : int, optional
+            Number of job results to return in one request, by default 100
+
+        Returns
+        -------
+        list
+            List of BilbyJob instances for the jobs corresponding to the search terms and in the specified time range
+        """
         query = """
             query ($search: String, $timeRange: String, $first: Int){
                 publicBilbyJobs (search: $search, timeRange: $timeRange, first: $first) {
@@ -144,7 +161,7 @@ class GWCloud:
             "first": number
         }
 
-        data, errors = self.client.request(query=query, variables=variables)
+        data = self.client.request(query=query, variables=variables)
 
         return [self._get_job_model_from_query(job['node']) for job in data['publicBilbyJobs']['edges']]
 
@@ -176,7 +193,7 @@ class GWCloud:
             "id": job_id
         }
 
-        data, errors = self.client.request(query=query, variables=variables)
+        data = self.client.request(query=query, variables=variables)
 
         return self._get_job_model_from_query(data['bilbyJob'])
 
@@ -196,7 +213,7 @@ class GWCloud:
             }
         """
         
-        data, errors = self.client.request(query=query)
+        data = self.client.request(query=query)
 
         return [self._get_job_model_from_query(job['node']) for job in data['bilbyJobs']['edges']]
 
@@ -218,12 +235,13 @@ class GWCloud:
             "jobId": job_id
         }
 
-        data, errors = self.client.request(query=query, variables=variables)
+        data = self.client.request(query=query, variables=variables)
 
         file_list = []
         for f in data['bilbyResultFiles']['files']:
             if f['isDir']:
                 continue
+            f.pop('isDir')
             f['path'] = remove_path_anchor(Path(f['path']))
             file_list.append(f)
 
@@ -293,6 +311,6 @@ class GWCloud:
             }
         }
 
-        data, errors = self.client.request(query=query, variables=variables)
+        data = self.client.request(query=query, variables=variables)
 
         return data['generateFileDownloadIds']['result']
