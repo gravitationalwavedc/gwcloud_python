@@ -106,6 +106,22 @@ def merged_json_file(file_path):
     return _file_end(file_path, '_merge_result.json')
 
 
+def unmerged_json_file(file_path):
+    """Checks to see if the given file path points towards the JSON file if not run in parallel
+
+    Parameters
+    ----------
+    file_path : str
+        File path to check
+
+    Returns
+    -------
+    bool
+        True if path points to JSON file, False otherwise
+    """
+    return _file_end(file_path, '_result.json')
+
+
 def corner_plot_file(file_path):
     """Checks to see if the given file path points towards a corner plot file
 
@@ -154,8 +170,8 @@ def result_png_file(file_path):
     return (result_dir(file_path) and png_file(file_path))
 
 
-def result_json_file(file_path):
-    """Checks to see if the given file path points to the merged JSON file in the 'result' directory
+def result_merged_json_file(file_path):
+    """Checks to see if the given file path points to a merged JSON file in the 'result' directory.
 
     Parameters
     ----------
@@ -165,13 +181,13 @@ def result_json_file(file_path):
     Returns
     -------
     bool
-        True if path points to the merged JSON file in 'result' directory, False otherwise
+        True if path points to the desired JSON file in 'result' directory, False otherwise
     """
     return (result_dir(file_path) and merged_json_file(file_path))
 
 
-def default_file(file_path):
-    """Checks to see if the given file path points to one of the default files for downloading
+def result_json_file(file_path):
+    """Checks to see if the given file path points to a result JSON file in the 'result' directory.
 
     Parameters
     ----------
@@ -181,21 +197,6 @@ def default_file(file_path):
     Returns
     -------
     bool
-        True if path points a default file, False otherwise
+        True if path points to the desired JSON file in 'result' directory, False otherwise
     """
-    if config_file(file_path):
-        return True
-
-    if html_file(file_path):
-        return True
-
-    if data_png_file(file_path):
-        return True
-
-    if result_png_file(file_path):
-        return True
-
-    if result_json_file(file_path):
-        return True
-
-    return False
+    return (result_dir(file_path) and unmerged_json_file(file_path))

@@ -11,6 +11,16 @@ The functions within this module are used to select which files belong to a part
    :undoc-members:
    :show-inheritance:
 
+File list functions
+-------------------
+
+The functions within this module are return lists of files based some identifiers
+
+.. automodule:: gwcloud_python.utils.file_lists
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Utils
 -----
 
