@@ -1,11 +1,14 @@
-import requests
-from enum import Enum
 import concurrent.futures
 import logging
+import tarfile
+from enum import Enum
 from functools import partial
 from pathlib import Path
-from tqdm import tqdm
+from tempfile import NamedTemporaryFile
+
+import requests
 from gwdc_python import GWDC
+from tqdm import tqdm
 
 from .bilby_job import BilbyJob
 from .file_reference import FileReference, FileReferenceList
@@ -399,3 +402,99 @@ class GWCloud:
         data = self.client.request(query=query, variables=variables)
 
         return data['generateFileDownloadIds']['result']
+
+    def _generate_upload_token(self):
+        """Creates a new long lived upload token for use uploading jobs
+
+        Returns
+        -------
+        str
+            The upload token
+        """
+        query = """
+            query GenerateBilbyJobUploadToken {
+                generateBilbyJobUploadToken {
+                  token
+                }
+            }
+        """
+
+        data = self.client.request(query=query)
+        return data['generateBilbyJobUploadToken']['token']
+
+    def upload_job_archive(self, description, job_archive, public=False):
+        """Upload a bilby job to GWCloud by job output archive
+
+        Parameters
+        ----------
+        description : str
+            The description of the job to add to the database
+
+        public : bool
+            If the uploaded job should be public or not
+
+        job_archive : str
+            The path to the job output archive to upload
+
+        Returns
+        -------
+        BilbyJob
+            The created Bilby job
+        """
+        query = """
+            mutation JobUploadMutation($input: UploadBilbyJobMutationInput!) {
+                uploadBilbyJob(input: $input) {
+                    result {
+                        jobId
+                    }
+                }
+            }
+        """
+
+        with open(job_archive, 'rb') as f:
+            variables = {
+                "input": {
+                    "uploadToken": self._generate_upload_token(),
+                    "details": {
+                        "description": description,
+                        "private": not public
+                    },
+                    "jobFile": f
+                }
+            }
+
+            data = self.client.request(query=query, variables=variables, authorize=False)
+
+        job_id = data['uploadBilbyJob']['result']['jobId']
+        return self.get_job_by_id(job_id)
+
+    def upload_job_directory(self, description, job_directory, public=False):
+        """Upload a bilby job to GWCloud by job output directory
+
+        Parameters
+        ----------
+        description : str
+            The description of the job to add to the database
+
+        public : bool
+            If the uploaded job should be public or not
+
+        job_directory : str
+            The path to the job output directory to upload
+
+        Returns
+        -------
+        BilbyJob
+            The created Bilby job
+        """
+
+        # Generate a temporary archive of the job
+        path = Path(job_directory)
+        with NamedTemporaryFile(dir=job_directory, suffix='.tar.gz') as f:
+            with tarfile.open(f.name, "w:gz", compresslevel=2) as tar_handle:
+                for item in path.rglob("*"):
+                    print(item)
+                    tar_handle.add(item, arcname=item.relative_to(path), recursive=False)
+
+            # Upload the archive
+            return self.upload_job_archive(description, f.name, public)
