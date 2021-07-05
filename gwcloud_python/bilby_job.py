@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 import logging
 from .utils import file_lists, write_file_at_path
 
@@ -10,7 +9,6 @@ ch.setLevel(logging.INFO)
 logger.addHandler(ch)
 
 
-@dataclass(init=False)
 class BilbyJob:
     """
     BilbyJob class is useful for interacting with the Bilby jobs returned from a call to the GWCloud API.
@@ -29,11 +27,13 @@ class BilbyJob:
     kwargs : dict, optional
         Extra arguments, stored in `other` attribute
     """
-    client: object = field(repr=False)
-    job_id: str
-    name: str
-    description: str
-    other: dict  #: Used to retain reference to other arbitrary information returned from the GWCloud query
+
+    DEFAULT_FILE_LIST_FILTERS = {
+        'default': file_lists.default_filter,
+        'config': file_lists.config_filter,
+        'png': file_lists.png_filter,
+        'corner_plot': file_lists.corner_plot_filter,
+    }
 
     def __init__(self, client, job_id, name, description, **kwargs):
         self.client = client
@@ -42,28 +42,8 @@ class BilbyJob:
         self.description = description
         self.other = kwargs
 
-    def _get_files_from_file_list(self, file_list):
-        file_ids, file_paths = [], []
-
-        for f in file_list:
-            file_ids.append(f['downloadToken'])
-            file_paths.append(f['path'])
-
-        files = self.get_files_by_tokens(file_ids)
-
-        return list(zip(file_paths, files))
-
-    def _save_files(self, root_path, files, preserve_directory_structure):
-        for i, (file_path, file_contents) in enumerate(files):
-            write_file_at_path(root_path, file_path, file_contents, preserve_directory_structure)
-            logger.info(f'File {i+1} of {len(files)} saved : {file_path}')
-
-        return 'Files saved!'
-
-    def _get_file_list_subset(self, file_list_fn):
-        return file_list_fn(
-            self.get_full_file_list()
-        )
+    def __repr__(self):
+        return f"BilbyJob(name={self.name}, job_id={self.job_id})"
 
     def get_full_file_list(self):
         """Get information for all files associated with this job
@@ -109,154 +89,91 @@ class BilbyJob:
             self.client._get_download_ids_from_tokens(self.job_id, file_tokens)
         )
 
-    def get_default_file_list(self):
-        """Get information for the default files associated with this job
+    @classmethod
+    def register_file_list_filter(cls, name, file_list_filter_fn):
+        """Register a function used to filter the file list.
+        This will create three methods on the class using this filter function:
+
+        - get_{name}_file_list
+        - get_{name}_files
+        - save_{name}_files
+
+        where {name} is the input name string.
+
+        Parameters
+        ----------
+        name : str
+            String used to name the added methods
+        file_list_filter_fn : function
+            A function that takes in the full file list and returns only the desired entries from the list
+        """
+        _register_file_list_filter(name, file_list_filter_fn)
+        cls.DEFAULT_FILE_LIST_FILTERS['name'] = file_list_filter_fn
+
+
+def _register_file_list_filter(name, file_list_filter_fn):
+    spaced_name = name.replace('_', ' ')
+
+    def _get_file_list_subset(self):
+        return file_list_filter_fn(
+            self.get_full_file_list()
+        )
+
+    file_list_fn_name = f'get_{name}_file_list'
+    file_list_fn = _get_file_list_subset
+    file_list_fn.__doc__ = f"""Get information for the {spaced_name} files associated with this job
 
         Returns
         -------
         list
             List of dicts containing information on the files
-        """
-        return self._get_file_list_subset(file_lists.default_filter)
+    """
+    setattr(BilbyJob, file_list_fn_name, file_list_fn)
 
-    def get_config_file_list(self):
-        """Get information for the config files associated with this job
+    def _get_files_from_file_list(self):
+        file_list = _get_file_list_subset(self)
+        file_tokens, file_paths = [], []
 
-        Returns
-        -------
-        list
-            List of dicts containing information on the files
-        """
-        return self._get_file_list_subset(file_lists.config_filter)
+        for f in file_list:
+            file_tokens.append(f['downloadToken'])
+            file_paths.append(f['path'])
 
-    def get_png_file_list(self):
-        """Get information for the PNG files associated with this job
+        files = self.get_files_by_tokens(file_tokens)
 
-        Returns
-        -------
-        list
-            List of dicts containing information on the files
-        """
-        return self._get_file_list_subset(file_lists.png_filter)
+        return list(zip(file_paths, files))
 
-    def get_corner_plot_file_list(self):
-        """Get information for the PNG files associated with this job
-
-        Returns
-        -------
-        list
-            List of dicts containing information on the files
-        """
-        return self._get_file_list_subset(file_lists.corner_plot_filter)
-
-    def get_default_files(self):
-        """Obtain the content of all the default files
+    files_fn_name = f'get_{name}_files'
+    files_fn = _get_files_from_file_list
+    files_fn.__doc__ = f"""Obtain the content of all the {spaced_name} files
 
         Returns
         -------
         list
             List containing tuples of the file path and associated file contents
-        """
-        return self._get_files_from_file_list(
-            self.get_default_file_list()
-        )
+    """
+    setattr(BilbyJob, files_fn_name, files_fn)
 
-    def save_default_files(self, root_path, preserve_directory_structure=True):
-        """Save the default files
+    def _save_files(self, root_path, preserve_directory_structure):
+        files = _get_files_from_file_list(self)
+        for i, (file_path, file_contents) in enumerate(files):
+            write_file_at_path(root_path, file_path, file_contents, preserve_directory_structure)
+            logger.info(f'File {i+1} of {len(files)} saved : {file_path}')
+
+        return 'Files saved!'
+
+    save_fn_name = f'save_{name}_files'
+    save_fn = _save_files
+    save_fn.__doc__ = f"""Save the {spaced_name} files
 
         Parameters
         ----------
         root_path : str or pathlib.Path
-            The base directory
+            The base directory into which the files will be saved
         preserve_directory_structure : bool, optional
             Save the files in the same structure that they were downloaded in, by default True
-        """
-        self._save_files(
-            root_path,
-            self.get_default_files(),
-            preserve_directory_structure
-        )
+    """
+    setattr(BilbyJob, save_fn_name, save_fn)
 
-    def get_config_files(self):
-        """Obtain the content of all the config files
 
-        Returns
-        -------
-        list
-            List containing tuples of the file path and associated file contents
-        """
-        return self._get_files_from_file_list(
-            self.get_config_file_list()
-        )
-
-    def save_config_files(self, root_path, preserve_directory_structure=True):
-        """Save the config files
-
-        Parameters
-        ----------
-        root_path : str or pathlib.PPath
-            The base directory
-        preserve_directory_structure : bool, optional
-            Save the files in the same structure that they were downloaded in, by default True
-        """
-        self._save_files(
-            root_path,
-            self.get_config_files(),
-            preserve_directory_structure
-        )
-
-    def get_png_files(self):
-        """Obtain the content of all the PNG files
-
-        Returns
-        -------
-        list
-            List containing tuples of the file path and associated file contents
-        """
-        return self._get_files_from_file_list(
-            self.get_png_file_list()
-        )
-
-    def save_png_files(self, root_path, preserve_directory_structure=True):
-        """Save the PNG files
-
-        Parameters
-        ----------
-        root_path : str or pathlib.Path
-            The base directory
-        preserve_directory_structure : bool, optional
-            Save the files in the same structure that they were downloaded in, by default True
-        """
-        self._save_files(
-            root_path,
-            self.get_png_files(),
-            preserve_directory_structure
-        )
-
-    def get_corner_plot_files(self):
-        """Obtain the content of all the corner plot files
-
-        Returns
-        -------
-        list
-            List containing tuples of the file path and associated file contents
-        """
-        return self._get_files_from_file_list(
-            self.get_corner_plot_file_list()
-        )
-
-    def save_corner_plot_files(self, root_path, preserve_directory_structure=True):
-        """Save the corner plot files
-
-        Parameters
-        ----------
-        root_path : str or pathlib.Path
-            The base directory
-        preserve_directory_structure : bool, optional
-            Save the files in the same structure that they were downloaded in, by default True
-        """
-        self._save_files(
-            root_path,
-            self.get_corner_plot_files(),
-            preserve_directory_structure
-        )
+for name, file_filter in BilbyJob.DEFAULT_FILE_LIST_FILTERS.items():
+    _register_file_list_filter(name, file_filter)
