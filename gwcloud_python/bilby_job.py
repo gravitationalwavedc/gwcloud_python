@@ -153,7 +153,7 @@ def _register_file_list_filter(name, file_list_filter_fn):
     """
     setattr(BilbyJob, files_fn_name, files_fn)
 
-    def _save_files(self, root_path, preserve_directory_structure):
+    def _save_files(self, root_path, preserve_directory_structure=True):
         files = _get_files_from_file_list(self)
         for i, (file_path, file_contents) in enumerate(files):
             write_file_at_path(root_path, file_path, file_contents, preserve_directory_structure)
