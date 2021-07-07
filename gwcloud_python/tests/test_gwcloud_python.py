@@ -23,7 +23,11 @@ def single_job_request(setup_mock_gwdc):
         "id": 1,
         "name": "test_name",
         "description": "test description",
-        "userId": 1
+        "userId": 1,
+        "jobStatus": {
+            "name": "Completed",
+            "date": "2021-12-02"
+        }
     }
     setup_mock_gwdc({"bilbyJob": job_data})
     return job_data
@@ -36,21 +40,33 @@ def multi_job_request(setup_mock_gwdc):
             "id": 1,
             "name": "test_name_1",
             "description": "test description 1",
-            "userId": 1
+            "userId": 1,
+            "jobStatus": {
+                "name": "Completed",
+                "date": "2021-01-01"
+            }
         }
 
         job_data_2 = {
             "id": 2,
             "name": "test_name_2",
             "description": "test description 2",
-            "userId": 2
+            "userId": 2,
+            "jobStatus": {
+                "name": "Completed",
+                "date": "2021-02-02"
+            }
         }
 
         job_data_3 = {
             "id": 3,
             "name": "test_name_3",
             "description": "test description 3",
-            "userId": 3
+            "userId": 3,
+            "jobStatus": {
+                "name": "Error",
+                "date": "2021-03-03"
+            }
         }
 
         setup_mock_gwdc({
@@ -81,6 +97,7 @@ def test_get_job_by_id(single_job_request):
     assert job.job_id == single_job_request["id"]
     assert job.name == single_job_request["name"]
     assert job.description == single_job_request["description"]
+    assert job.status == single_job_request["jobStatus"]
     assert job.other['userId'] == single_job_request["userId"]
 
 
@@ -92,14 +109,17 @@ def test_get_user_jobs(user_jobs):
     assert jobs[0].job_id == user_jobs[0]["id"]
     assert jobs[0].name == user_jobs[0]["name"]
     assert jobs[0].description == user_jobs[0]["description"]
+    assert jobs[0].status == user_jobs[0]["jobStatus"]
     assert jobs[0].other['userId'] == user_jobs[0]["userId"]
 
     assert jobs[1].job_id == user_jobs[1]["id"]
     assert jobs[1].name == user_jobs[1]["name"]
     assert jobs[1].description == user_jobs[1]["description"]
+    assert jobs[1].status == user_jobs[1]["jobStatus"]
     assert jobs[1].other['userId'] == user_jobs[1]["userId"]
 
     assert jobs[2].job_id == user_jobs[2]["id"]
     assert jobs[2].name == user_jobs[2]["name"]
     assert jobs[2].description == user_jobs[2]["description"]
+    assert jobs[2].status == user_jobs[2]["jobStatus"]
     assert jobs[2].other['userId'] == user_jobs[2]["userId"]

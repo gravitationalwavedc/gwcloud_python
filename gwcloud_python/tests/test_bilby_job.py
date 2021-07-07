@@ -84,7 +84,16 @@ def setup_mock_gwcloud(mocker, full):
 
 @pytest.fixture
 def bilby_job(setup_mock_gwcloud):
-    return BilbyJob(client=setup_mock_gwcloud, job_id='test_id', name='TestName', description='Test description')
+    return BilbyJob(
+        client=setup_mock_gwcloud,
+        job_id='test_id',
+        name='TestName',
+        description='Test description',
+        job_status={
+            'name': 'Completed',
+            'date': '2021-12-02'
+        }
+    )
 
 
 def test_bilby_job_full_file_list(bilby_job, full):

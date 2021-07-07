@@ -24,6 +24,8 @@ class BilbyJob:
         Job name
     description : str
         Job description
+    job_status : dict
+        Status of job, should have 'name' and 'date' keys corresponding to the status code and when it was produced
     kwargs : dict, optional
         Extra arguments, stored in `other` attribute
     """
@@ -35,11 +37,12 @@ class BilbyJob:
         'corner_plot': file_lists.corner_plot_filter,
     }
 
-    def __init__(self, client, job_id, name, description, **kwargs):
+    def __init__(self, client, job_id, name, description, job_status, **kwargs):
         self.client = client
         self.job_id = job_id
         self.name = name
         self.description = description
+        self.status = job_status
         self.other = kwargs
 
     def __repr__(self):

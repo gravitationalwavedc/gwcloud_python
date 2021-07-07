@@ -120,7 +120,7 @@ class GWCloud:
         return self.get_public_job_list(search="preferred lasky", time_range="Any time")
 
     def _get_job_model_from_query(self, query_data):
-        return BilbyJob(client=self, **rename_dict_keys(query_data, [('id', 'job_id')]))
+        return BilbyJob(client=self, **rename_dict_keys(query_data, [('id', 'job_id'), ('jobStatus', 'job_status')]))
 
     def get_public_job_list(self, search="", time_range="Any time", number=100):
         """Obtains a list of public Bilby jobs, filtering based on the search terms
@@ -149,6 +149,10 @@ class GWCloud:
                             user
                             name
                             description
+                            jobStatus {
+                                name
+                                date
+                            }
                         }
                     }
                 }
@@ -185,6 +189,10 @@ class GWCloud:
                     name
                     userId
                     description
+                    jobStatus {
+                        name
+                        date
+                    }
                 }
             }
         """
@@ -207,6 +215,10 @@ class GWCloud:
                             name
                             userId
                             description
+                            jobStatus {
+                                name
+                                date
+                            }
                         }
                     }
                 }
