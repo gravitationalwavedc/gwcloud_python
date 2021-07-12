@@ -1,11 +1,14 @@
 import requests
 import concurrent.futures
 import logging
+from functools import partial
 from pathlib import Path
+from tqdm import tqdm
 from gwdc_python import GWDC
 
 from .bilby_job import BilbyJob
-from .utils import remove_path_anchor, rename_dict_keys
+from .file_reference import FileReference, FileReferenceList
+from .utils import rename_dict_keys, convert_dict_keys
 
 GWCLOUD_ENDPOINT = 'https://gwcloud.org.au/bilby/graphql'
 GWCLOUD_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/job/apiv1/file/?fileId='
@@ -15,6 +18,7 @@ logger.setLevel(logging.INFO)
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
+# ch.setStream(tqdm)
 logger.addHandler(ch)
 
 
@@ -249,30 +253,90 @@ class GWCloud:
 
         data = self.client.request(query=query, variables=variables)
 
-        file_list = []
+        file_list = FileReferenceList()
         for f in data['bilbyResultFiles']['files']:
             if f['isDir']:
                 continue
             f.pop('isDir')
-            f['path'] = remove_path_anchor(Path(f['path']))
-            file_list.append(f)
+            file_list.append(FileReference(**convert_dict_keys(f)))
 
         return file_list
 
-    def _get_file_by_id(self, file_id):
+    def _get_file_map_fn(self, file_id, file_path, progress_bar):
         download_url = GWCLOUD_FILE_DOWNLOAD_ENDPOINT + str(file_id)
-        request = requests.get(download_url)
-        return request.content
+        content = b''
+        with requests.get(download_url, stream=True) as request:
+            for chunk in request.iter_content(chunk_size=1024 * 16, decode_unicode=True):
+                progress_bar.update(len(chunk))
+                content += chunk
+        return (file_path, content)
 
-    def _get_files_by_id(self, file_ids):
-        result = []
+    def _get_files_by_reference(self, job_id, file_references):
+        """Obtains file data when provided a job ID and a FileReferenceList
+
+        Parameters
+        ----------
+        job_id : str
+            Job ID
+        file_references : FileReferenceList
+            Contains the FileReferences objects for which to download the contents
+
+        Returns
+        -------
+        list
+            List of tuples containing the file path and file contents as a byte string
+        """
+        file_ids = self._get_download_ids_from_tokens(job_id, file_references.get_tokens())
+        file_paths = file_references.get_paths()
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            files = executor.map(self._get_file_by_id, file_ids)
-            for i, f in enumerate(files):
-                logger.info(f'File {i+1} of {len(file_ids)} downloaded! Filesize: {len(f)}')
-                result.append(f)
+            progress = tqdm(total=file_references.get_total_bytes(), leave=True, unit='B', unit_scale=True)
+            files = list(executor.map(partial(self._get_file_map_fn, progress_bar=progress), file_ids, file_paths))
+            progress.close()
+            logger.info(f'All {len(file_ids)} files downloaded!')
 
-        return result
+        return files
+
+    def _save_file_map_fn(self, file_id, file_path, progress_bar):
+        download_url = GWCLOUD_FILE_DOWNLOAD_ENDPOINT + str(file_id)
+        file_path.parents[0].mkdir(parents=True, exist_ok=True)
+
+        with requests.get(download_url, stream=True) as request:
+            with file_path.open("ab") as f:
+                for chunk in request.iter_content(chunk_size=1024 * 16):
+                    progress_bar.update(len(chunk))
+                    f.write(chunk)
+
+    def _save_files_by_reference(self, job_id, file_references, root_path, preserve_directory_structure=True):
+        """Save files when provided a job ID and a FileReferenceList
+
+        Parameters
+        ----------
+        job_id : str
+            Job ID
+        file_references : FileReferenceList
+            Contains the FileReference objects for which to save the associated files
+        root_path : str or ~pathlib.Path
+            Directory into which to save the files
+        preserve_directory_structure : bool, optional
+            Remove any directory structure for the downloaded files, by default True
+
+        Returns
+        -------
+        str
+            Success message
+        """
+        file_ids = self._get_download_ids_from_tokens(job_id, file_references.get_tokens())
+        file_paths = file_references.get_output_paths(root_path, preserve_directory_structure)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            progress = tqdm(total=file_references.get_total_bytes(), leave=True, unit='B', unit_scale=True)
+            list(executor.map(partial(self._save_file_map_fn, progress_bar=progress), file_ids, file_paths))
+            progress.close()
+
+        logger.info(f'All {len(file_ids)} files saved!')
+
+        return 'Success'
 
     def _get_download_id_from_token(self, job_id, file_token):
         """Get a single file download id for a file download token

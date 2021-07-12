@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 def write_file_at_path(root_path, file_path, file_contents, preserve_directory_structure=True):
@@ -60,6 +61,29 @@ def rename_dict_keys(input_dict, key_sets):
     """
     output_dict = input_dict.copy()
     for old_key, new_key in key_sets:
-        output_dict[new_key] = output_dict.pop(old_key)
+        output_dict[new_key] = output_dict.pop(old_key, None)
 
     return output_dict
+
+
+def convert_dict_keys(input_dict, key_sets=[]):
+    """Convert the keys of a dictionary from camelCase to snake_case
+
+    Parameters
+    ----------
+    input_dict : dict
+        Dictionary for which to convert the keys
+    key_sets : list, optional
+        List of tuples of the format `(old_key, new_key)` which will also be applied to the dict, by default []
+
+    Returns
+    -------
+    dict
+        Copy of `input_dict` with keys converted from camelCase to snake_case, and optional other key sets exchanged
+    """
+    convert_key_sets = []
+    for old_key in input_dict.keys():
+        new_key = re.sub('([A-Z]+)', r'_\1', old_key).lower()
+        if old_key != new_key:
+            convert_key_sets.append((old_key, new_key))
+    return rename_dict_keys(input_dict, convert_key_sets + key_sets)

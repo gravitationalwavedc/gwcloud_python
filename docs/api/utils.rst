@@ -16,7 +16,7 @@ File list functions
 
 The functions within this module are return lists of files based some identifiers
 
-.. automodule:: gwcloud_python.utils.file_lists
+.. automodule:: gwcloud_python.utils.file_filters
    :members:
    :undoc-members:
    :show-inheritance:

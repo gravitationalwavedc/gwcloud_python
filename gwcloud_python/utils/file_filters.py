@@ -5,7 +5,7 @@ def _split_file_list(identifier, file_list):
     matches = []
     others = []
     for f in file_list:
-        if identifier(f['path']):
+        if identifier(f.path):
             matches.append(f)
         else:
             others.append(f)
@@ -13,7 +13,7 @@ def _split_file_list(identifier, file_list):
 
 
 def _filter_file_list(identifier, file_list):
-    return [f for f in file_list if identifier(f['path'])]
+    return [f for f in file_list if identifier(f.path)]
 
 
 def default_filter(file_list):
@@ -129,4 +129,4 @@ def sort_file_list(file_list):
     list
         List containing the same members as file_list, sorted by the 'path' key of the dicts
     """
-    return sorted(file_list, key=lambda f: f['path'])
+    return sorted(file_list, key=lambda f: f.path)

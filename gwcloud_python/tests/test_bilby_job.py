@@ -1,56 +1,55 @@
-from gwcloud_python import BilbyJob, GWCloud
+from gwcloud_python import BilbyJob, GWCloud, FileReference, FileReferenceList
 import pytest
-from pathlib import Path
-from gwcloud_python.utils import file_lists
+from gwcloud_python.utils import file_filters
 
 
 @pytest.fixture
 def png_data_result():
-    return [
-        {'path': Path('data/dir/test1.png'), 'downloadToken': 'test_download_token_1'},
-        {'path': Path('data/dir/test2.png'), 'downloadToken': 'test_download_token_2'},
-        {'path': Path('result/dir/test1.png'), 'downloadToken': 'test_download_token_3'},
-        {'path': Path('result/dir/test2.png'), 'downloadToken': 'test_download_token_4'},
-    ]
+    return FileReferenceList([
+        FileReference(path='data/dir/test1.png', file_size='1', download_token='test_download_token_1'),
+        FileReference(path='data/dir/test2.png', file_size='1', download_token='test_download_token_2'),
+        FileReference(path='result/dir/test1.png', file_size='1', download_token='test_download_token_3'),
+        FileReference(path='result/dir/test2.png', file_size='1', download_token='test_download_token_4'),
+    ])
 
 
 @pytest.fixture
 def png_extra():
-    return [
-        {'path': Path('test1.png'), 'downloadToken': 'test_download_token_5'},
-        {'path': Path('test2.png'), 'downloadToken': 'test_download_token_6'},
-        {'path': Path('arbitrary/dir/test1.png'), 'downloadToken': 'test_download_token_7'},
-        {'path': Path('arbitrary/dir/test2.png'), 'downloadToken': 'test_download_token_8'},
-    ]
+    return FileReferenceList([
+        FileReference(path='test1.png', file_size='1', download_token='test_download_token_5'),
+        FileReference(path='test2.png', file_size='1', download_token='test_download_token_6'),
+        FileReference(path='arbitrary/dir/test1.png', file_size='1', download_token='test_download_token_7'),
+        FileReference(path='arbitrary/dir/test2.png', file_size='1', download_token='test_download_token_8'),
+    ])
 
 
 @pytest.fixture
 def corner():
-    return [
-        {'path': Path('test1_corner.png'), 'downloadToken': 'test_download_token_9'},
-        {'path': Path('test2_corner.png'), 'downloadToken': 'test_download_token_10'},
-    ]
+    return FileReferenceList([
+        FileReference(path='test1_corner.png', file_size='1', download_token='test_download_token_9'),
+        FileReference(path='test2_corner.png', file_size='1', download_token='test_download_token_10'),
+    ])
 
 
 @pytest.fixture
 def config():
-    return [
-        {'path': Path('a_config_complete.ini'), 'downloadToken': 'test_download_token_11'},
-    ]
+    return FileReferenceList([
+        FileReference(path='a_config_complete.ini', file_size='1', download_token='test_download_token_11'),
+    ])
 
 
 @pytest.fixture
 def json():
-    return [
-        {'path': Path('result/dir/a_merge_result.json'), 'downloadToken': 'test_download_token_12'},
-    ]
+    return FileReferenceList([
+        FileReference(path='result/dir/a_merge_result.json', file_size='1', download_token='test_download_token_12'),
+    ])
 
 
 @pytest.fixture
 def index():
-    return [
-        {'path': Path('index.html'), 'downloadToken': 'test_download_token_13'},
-    ]
+    return FileReferenceList([
+        FileReference(path='index.html', file_size='1', download_token='test_download_token_13'),
+    ])
 
 
 @pytest.fixture
@@ -100,16 +99,16 @@ def test_bilby_job_full_file_list(bilby_job, full):
     assert bilby_job.get_full_file_list() == full
 
 
-def test_bilby_job_file_lists(bilby_job, default, png, corner, config):
-    assert file_lists.sort_file_list(bilby_job.get_default_file_list()) == file_lists.sort_file_list(default)
-    assert file_lists.sort_file_list(bilby_job.get_png_file_list()) == file_lists.sort_file_list(png)
-    assert file_lists.sort_file_list(bilby_job.get_corner_plot_file_list()) == file_lists.sort_file_list(corner)
-    assert file_lists.sort_file_list(bilby_job.get_config_file_list()) == file_lists.sort_file_list(config)
+def test_bilby_job_file_filters(bilby_job, default, png, corner, config):
+    assert file_filters.sort_file_list(bilby_job.get_default_file_list()) == file_filters.sort_file_list(default)
+    assert file_filters.sort_file_list(bilby_job.get_png_file_list()) == file_filters.sort_file_list(png)
+    assert file_filters.sort_file_list(bilby_job.get_corner_plot_file_list()) == file_filters.sort_file_list(corner)
+    assert file_filters.sort_file_list(bilby_job.get_config_file_list()) == file_filters.sort_file_list(config)
 
 
 def test_register_file_list_filter(bilby_job, index):
     def get_html_file(file_list):
-        return [f for f in file_list if f['path'].suffix == '.html']
+        return [f for f in file_list if f.path.suffix == '.html']
 
     assert getattr(bilby_job, 'get_index_file_list', None) is None
     assert getattr(bilby_job, 'get_index_files', None) is None

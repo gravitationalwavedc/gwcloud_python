@@ -1,5 +1,5 @@
 import logging
-from .utils import file_lists, write_file_at_path
+from .utils import file_filters
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -31,10 +31,10 @@ class BilbyJob:
     """
 
     DEFAULT_FILE_LIST_FILTERS = {
-        'default': file_lists.default_filter,
-        'config': file_lists.config_filter,
-        'png': file_lists.png_filter,
-        'corner_plot': file_lists.corner_plot_filter,
+        'default': file_filters.default_filter,
+        'config': file_filters.config_filter,
+        'png': file_filters.png_filter,
+        'corner_plot': file_filters.corner_plot_filter,
     }
 
     def __init__(self, client, job_id, name, description, job_status, **kwargs):
@@ -53,43 +53,45 @@ class BilbyJob:
 
         Returns
         -------
-        list
-            List of dicts containing information on the files
+        ~gwcloud_python.file_reference.FileReferenceList
+            Contains FileReference instances for each of the files associated with this job
         """
         return self.client._get_files_by_job_id(self.job_id)
 
-    def get_file_by_token(self, file_token):
-        """Get the contents of a file
+    def get_files_by_reference(self, file_references):
+        """Obtain the data for a FileReferenceList
 
         Parameters
         ----------
-        file_token : str
-            Download token for the desired file
-
-        Returns
-        -------
-        bytes
-            Content of the file
-        """
-        return self.client._get_file_by_id(
-            self.client._get_download_id_from_token(self.job_id, file_token)
-        )
-
-    def get_files_by_tokens(self, file_tokens):
-        """Get the contents of files
-
-        Parameters
-        ----------
-        file_tokens : list
-            List of download tokens
+        file_references : ~gwcloud_python.file_reference.FileReferenceList
+            Contains ~gwcloud_python.file_reference.FileReference instances for each of the files to be downloaded
 
         Returns
         -------
         list
-            Contents of the files
+            List of tuples with the file path and downloaded file contents as a byte string
         """
-        return self.client._get_files_by_id(
-            self.client._get_download_ids_from_tokens(self.job_id, file_tokens)
+        return self.client._get_files_by_reference(self.job_id, file_references)
+
+    def save_files_by_reference(self, file_references, root_path, preserve_directory_structure=True):
+        """Save the files represented in a FileReferenceList
+
+        Parameters
+        ----------
+        file_references : ~gwcloud_python.file_reference.FileReferenceList
+            Contains FileReference instances for each of the files to be downloaded and saved
+        root_path : str or ~pathlib.Path
+            Directory into which to save the files
+        preserve_directory_structure : bool, optional
+            Whether or not the files should retain the directory structure in which they are downloaded, by default True
+
+        Returns
+        -------
+        str
+            Success message
+        """
+        return self.client._save_files_by_reference(
+            self.job_id, file_references, root_path, preserve_directory_structure
         )
 
     @classmethod
@@ -111,16 +113,15 @@ class BilbyJob:
             A function that takes in the full file list and returns only the desired entries from the list
         """
         _register_file_list_filter(name, file_list_filter_fn)
-        cls.DEFAULT_FILE_LIST_FILTERS['name'] = file_list_filter_fn
+        cls.DEFAULT_FILE_LIST_FILTERS[f'{name}'] = file_list_filter_fn
 
 
 def _register_file_list_filter(name, file_list_filter_fn):
     spaced_name = name.replace('_', ' ')
 
     def _get_file_list_subset(self):
-        return file_list_filter_fn(
-            self.get_full_file_list()
-        )
+        full_list = self.get_full_file_list()
+        return full_list.filter_list(file_list_filter_fn)
 
     file_list_fn_name = f'get_{name}_file_list'
     file_list_fn = _get_file_list_subset
@@ -128,26 +129,22 @@ def _register_file_list_filter(name, file_list_filter_fn):
 
         Returns
         -------
-        list
-            List of dicts containing information on the files
+        ~gwcloud_python.file_reference.FileReferenceList
+            Contains FileReference instances holding information on the {spaced_name} files
     """
     setattr(BilbyJob, file_list_fn_name, file_list_fn)
 
-    def _get_files_from_file_list(self):
+    def _get_files(self):
         file_list = _get_file_list_subset(self)
-        file_tokens, file_paths = [], []
-
-        for f in file_list:
-            file_tokens.append(f['downloadToken'])
-            file_paths.append(f['path'])
-
-        files = self.get_files_by_tokens(file_tokens)
-
-        return list(zip(file_paths, files))
+        return self.get_files_by_reference(file_list)
 
     files_fn_name = f'get_{name}_files'
-    files_fn = _get_files_from_file_list
-    files_fn.__doc__ = f"""Obtain the content of all the {spaced_name} files
+    files_fn = _get_files
+    files_fn.__doc__ = f"""Download the content of all the {spaced_name} files.
+
+        **WARNING**:
+        *As the file contents are stored in memory, we suggest being cautious about the size of files being downloaded.
+        If the files are large or very numerous, it is suggested to save the files and read them as needed instead.*
 
         Returns
         -------
@@ -157,20 +154,16 @@ def _register_file_list_filter(name, file_list_filter_fn):
     setattr(BilbyJob, files_fn_name, files_fn)
 
     def _save_files(self, root_path, preserve_directory_structure=True):
-        files = _get_files_from_file_list(self)
-        for i, (file_path, file_contents) in enumerate(files):
-            write_file_at_path(root_path, file_path, file_contents, preserve_directory_structure)
-            logger.info(f'File {i+1} of {len(files)} saved : {file_path}')
-
-        return 'Files saved!'
+        file_list = _get_file_list_subset(self)
+        return self.save_files_by_reference(file_list, root_path, preserve_directory_structure)
 
     save_fn_name = f'save_{name}_files'
     save_fn = _save_files
-    save_fn.__doc__ = f"""Save the {spaced_name} files
+    save_fn.__doc__ = f"""Download and save the {spaced_name} files.
 
         Parameters
         ----------
-        root_path : str or pathlib.Path
+        root_path : str or ~pathlib.Path
             The base directory into which the files will be saved
         preserve_directory_structure : bool, optional
             Save the files in the same structure that they were downloaded in, by default True
