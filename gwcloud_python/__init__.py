@@ -1,4 +1,4 @@
-from .gwcloud import GWCloud
+from .gwcloud import GWCloud, TimeRange
 from .bilby_job import BilbyJob
 from .file_reference import FileReference, FileReferenceList
 

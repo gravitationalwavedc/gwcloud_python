@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import UserList
 from pathlib import Path
 from .utils import remove_path_anchor
@@ -9,8 +9,8 @@ class FileReference:
     """Object used to facilitate simpler downloading of files.
     """
     path: str
-    file_size: int
-    download_token: str
+    file_size: int = field(repr=False)
+    download_token: str = field(repr=False)
 
     def __post_init__(self):
         self.path = remove_path_anchor(Path(self.path))

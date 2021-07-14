@@ -1,4 +1,5 @@
 import requests
+from enum import Enum
 import concurrent.futures
 import logging
 from functools import partial
@@ -18,8 +19,16 @@ logger.setLevel(logging.INFO)
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
-# ch.setStream(tqdm)
 logger.addHandler(ch)
+
+
+class TimeRange(Enum):
+    """Enum to help with the time range field in the public job search."""
+    ANY = "Any time"
+    DAY = "Past 24 hours"
+    WEEK = "Past week"
+    MONTH = "Past month"
+    YEAR = "Past year"
 
 
 class GWCloud:
@@ -121,21 +130,21 @@ class GWCloud:
         list
             List of BilbyJob instances
         """
-        return self.get_public_job_list(search="preferred lasky", time_range="Any time")
+        return self.get_public_job_list(search="preferred lasky", time_range=TimeRange.ANY)
 
     def _get_job_model_from_query(self, query_data):
         return BilbyJob(client=self, **rename_dict_keys(query_data, [('id', 'job_id'), ('jobStatus', 'job_status')]))
 
-    def get_public_job_list(self, search="", time_range="Any time", number=100):
+    def get_public_job_list(self, search="", time_range=TimeRange.ANY, number=100):
         """Obtains a list of public Bilby jobs, filtering based on the search terms
         and the time range within which the job was created.
 
         Parameters
         ----------
         search : str, optional
-            Search terms by which to fileter public job list, by default ""
-        time_range : str, optional
-            Time range by which to filter job list, by default "Any time"
+            Search terms by which to filter public job list, by default ""
+        time_range : TimeRange or str, optional
+            Time range by which to filter job list, by default TimeRange.ANY
         number : int, optional
             Number of job results to return in one request, by default 100
 
@@ -165,7 +174,7 @@ class GWCloud:
 
         variables = {
             "search": search,
-            "timeRange": time_range,
+            "timeRange": time_range.value if isinstance(time_range, TimeRange) else time_range,
             "first": number
         }
 

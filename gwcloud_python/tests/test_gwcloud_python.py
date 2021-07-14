@@ -1,4 +1,5 @@
-from gwcloud_python import GWCloud
+from gwcloud_python import GWCloud, FileReference
+from gwcloud_python.utils import convert_dict_keys
 import pytest
 
 
@@ -85,6 +86,42 @@ def multi_job_request(setup_mock_gwdc):
 
 
 @pytest.fixture
+def job_file_request(setup_mock_gwdc):
+    job_file_data_1 = {
+        "path": "path/to/test.png",
+        "fileSize": "1",
+        "downloadToken": "test_token_1",
+        "isDir": False
+    }
+
+    job_file_data_2 = {
+        "path": "path/to/test.json",
+        "fileSize": "10",
+        "downloadToken": "test_token_2",
+        "isDir": False
+    }
+
+    job_file_data_3 = {
+        "path": "path/to/test",
+        "fileSize": "100",
+        "downloadToken": "test_token_3",
+        "isDir": True
+    }
+
+    setup_mock_gwdc({
+        "bilbyResultFiles": {
+            "files": [
+                job_file_data_1,
+                job_file_data_2,
+                job_file_data_3
+            ]
+        }
+    })
+
+    return [job_file_data_1, job_file_data_2, job_file_data_3]
+
+
+@pytest.fixture
 def user_jobs(multi_job_request):
     return multi_job_request('bilbyJobs')
 
@@ -123,3 +160,12 @@ def test_get_user_jobs(user_jobs):
     assert jobs[2].description == user_jobs[2]["description"]
     assert jobs[2].status == user_jobs[2]["jobStatus"]
     assert jobs[2].other['userId'] == user_jobs[2]["userId"]
+
+
+def test_gwcloud_files_by_job_id(job_file_request):
+    gwc = GWCloud(token='my_token')
+
+    file_list = gwc._get_files_by_job_id('arbitrary_job_id')
+
+    for i, ref in enumerate(file_list):
+        assert ref == FileReference(**convert_dict_keys(job_file_request[i]))

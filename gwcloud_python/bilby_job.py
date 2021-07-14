@@ -53,7 +53,7 @@ class BilbyJob:
 
         Returns
         -------
-        ~gwcloud_python.file_reference.FileReferenceList
+        .FileReferenceList
             Contains FileReference instances for each of the files associated with this job
         """
         return self.client._get_files_by_job_id(self.job_id)
@@ -63,8 +63,8 @@ class BilbyJob:
 
         Parameters
         ----------
-        file_references : ~gwcloud_python.file_reference.FileReferenceList
-            Contains ~gwcloud_python.file_reference.FileReference instances for each of the files to be downloaded
+        file_references : .FileReferenceList
+            Contains FileReference instances for each of the files to be downloaded
 
         Returns
         -------
@@ -78,7 +78,7 @@ class BilbyJob:
 
         Parameters
         ----------
-        file_references : ~gwcloud_python.file_reference.FileReferenceList
+        file_references : .FileReferenceList
             Contains FileReference instances for each of the files to be downloaded and saved
         root_path : str or ~pathlib.Path
             Directory into which to save the files
@@ -129,7 +129,7 @@ def _register_file_list_filter(name, file_list_filter_fn):
 
         Returns
         -------
-        ~gwcloud_python.file_reference.FileReferenceList
+        .FileReferenceList
             Contains FileReference instances holding information on the {spaced_name} files
     """
     setattr(BilbyJob, file_list_fn_name, file_list_fn)

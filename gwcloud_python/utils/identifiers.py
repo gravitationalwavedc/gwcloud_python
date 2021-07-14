@@ -15,7 +15,7 @@ def html_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -31,7 +31,7 @@ def png_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -47,7 +47,7 @@ def data_dir(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -63,7 +63,7 @@ def result_dir(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -79,7 +79,7 @@ def config_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -95,7 +95,7 @@ def merged_json_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -111,7 +111,7 @@ def unmerged_json_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -127,7 +127,7 @@ def corner_plot_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -143,7 +143,7 @@ def data_png_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -159,7 +159,7 @@ def result_png_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -175,7 +175,7 @@ def result_merged_json_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns
@@ -191,7 +191,7 @@ def result_json_file(file_path):
 
     Parameters
     ----------
-    file_path : str
+    file_path : ~pathlib.Path
         File path to check
 
     Returns

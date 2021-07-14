@@ -27,14 +27,13 @@ def default_filter(file_list):
 
     Parameters
     ----------
-    file_list : list
-        A list of dicts, each of which must have a 'path' key,
-        with the value being the file path within the job files directory
+    file_list : .FileReferenceList
+        A list of FileReference objects which will be filtered
 
     Returns
     -------
-    list
-        Subset of file_list containing only the paths that match the above default file criteria
+    .FileReferenceList
+        Subset of the input FileReferenceList containing only the paths that match the above default file criteria
     """
     # Get png files in data dir
     data_png_file_list, file_list = _split_file_list(identifiers.data_png_file, file_list)
@@ -65,14 +64,13 @@ def config_filter(file_list):
 
     Parameters
     ----------
-    file_list : list
-        A list of dicts, each of which must have a 'path' key,
-        with the value being the file path within the job files directory
+    file_list : .FileReferenceList
+        A list of FileReference objects which will be filtered
 
     Returns
     -------
-    list
-        Subset of file_list containing only the paths that match the above config file criteria
+    .FileReferenceList
+        Subset of the input FileReferenceList containing only the paths that match the above config file criteria
     """
     return _filter_file_list(identifiers.config_file, file_list)
 
@@ -84,14 +82,13 @@ def png_filter(file_list):
 
     Parameters
     ----------
-    file_list : list
-        A list of dicts, each of which must have a 'path' key,
-        with the value being the file path within the job files directory
+    file_list : .FileReferenceList
+        A list of FileReference objects which will be filtered
 
     Returns
     -------
-    list
-        Subset of file_list containing only the paths that match the above png file criteria
+    .FileReferenceList
+        Subset of the input FileReferenceList containing only the paths that match the above png file criteria
     """
     return _filter_file_list(identifiers.png_file, file_list)
 
@@ -103,14 +100,13 @@ def corner_plot_filter(file_list):
 
     Parameters
     ----------
-    file_list : list
-        A list of dicts, each of which must have a 'path' key,
-        with the value being the file path within the job files directory
+    file_list : .FileReferenceList
+        A list of FileReference objects which will be filtered
 
     Returns
     -------
-    list
-        Subset of file_list containing only the paths that match the above corner plot file criteria
+    .FileReferenceList
+        Subset of the input FileReferenceList containing only the paths that match the above corner plot file criteria
     """
     return _filter_file_list(identifiers.corner_plot_file, file_list)
 
@@ -120,13 +116,13 @@ def sort_file_list(file_list):
 
     Parameters
     ----------
-    file_list : list
-        A list of dicts, each of which must have a 'path' key,
-        with the value being the file path within the job files directory
+    file_list : .FileReferenceList
+        A list of FileReference objects which will be filtered
 
     Returns
     -------
-    list
-        List containing the same members as file_list, sorted by the 'path' key of the dicts
+    .FileReferenceList
+        A FileReferenceList containing the same members as the input,
+        sorted by the path attribute of the FileReference objects
     """
     return sorted(file_list, key=lambda f: f.path)
