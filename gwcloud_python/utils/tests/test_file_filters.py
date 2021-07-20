@@ -20,10 +20,16 @@ def png_result():
 
 
 @pytest.fixture
-def png_extra():
+def png_extra_no_dir():
     return FileReferenceList([
         FileReference(path='test1.png', file_size='1', download_token='test_download_token_5'),
         FileReference(path='test2.png', file_size='1', download_token='test_download_token_6'),
+    ])
+
+
+@pytest.fixture
+def png_extra_dir():
+    return FileReferenceList([
         FileReference(path='arbitrary/dir/test1.png', file_size='1', download_token='test_download_token_7'),
         FileReference(path='arbitrary/dir/test2.png', file_size='1', download_token='test_download_token_8'),
     ])
@@ -66,8 +72,8 @@ def unmerge():
 
 
 @pytest.fixture
-def png(png_data, png_result, png_extra, corner):
-    return png_data + png_result + png_extra + corner
+def png(png_data, png_result, png_extra_no_dir, png_extra_dir, corner):
+    return png_data + png_result + png_extra_no_dir + png_extra_dir + corner
 
 
 @pytest.fixture
@@ -111,3 +117,24 @@ def test_config_file_filter(full_with_merge, config):
 def test_corner_file_filter(full_with_merge, corner):
     sub_list = file_filters.corner_plot_filter(full_with_merge)
     assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(corner)
+
+
+def test_custom_path_file_filter(full_without_merge, merge, png_data, png_extra_dir, index):
+    # Test here is not exactly comprehensive, but it's good enough for now
+    full = full_without_merge + merge
+    sub_list = file_filters.custom_path_filter(full, directory='data')
+    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(png_data)
+    sub_list = file_filters.custom_path_filter(full, name='merge')
+    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(merge)
+    sub_list = file_filters.custom_path_filter(full, extension='html')
+    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(index)
+
+    sub_list = file_filters.custom_path_filter(full, directory='result', name='merge')
+    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(merge)
+    sub_list = file_filters.custom_path_filter(full, directory='arbitrary', extension='png')
+    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(png_extra_dir)
+    sub_list = file_filters.custom_path_filter(full, name='merge', extension='json')
+    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(merge)
+
+    sub_list = file_filters.custom_path_filter(full, directory='result', name='merge', extension='json')
+    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(merge)

@@ -26,7 +26,5 @@ Example
     >>> job = gwc.get_preferred_job_list()[0]
     >>> job.save_corner_plot_files()
 
-    File 1 of 2 downloaded! Filesize: 1862910
-    File 2 of 2 downloaded! Filesize: 1894329
-    File 1 of 2 saved : result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_merge_extrinsic_corner.png
-    File 2 of 2 saved : result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_merge_intrinsic_corner.png
+    100%|██████████████████████████████████████| 3.76M/3.76M [00:00<00:00, 5.20MB/s]
+    All 2 files saved!

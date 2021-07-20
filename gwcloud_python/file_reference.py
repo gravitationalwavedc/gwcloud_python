@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from collections import UserList
 from pathlib import Path
-from .utils import remove_path_anchor
+from .utils import remove_path_anchor, file_filters
 
 
 @dataclass
@@ -50,7 +50,7 @@ class FileReferenceList(UserList):
             raise Exception('Appended item must be a FileReference object')
         self.data.append(item)
 
-    def filter_list(self, file_filter_fn):
+    def filter_list(self, file_filter_fn, *args, **kwargs):
         """Create a subset of this list by filtering the contents with a function.
 
         Parameters
@@ -63,7 +63,10 @@ class FileReferenceList(UserList):
         FileReferenceList
             Filtered list
         """
-        return FileReferenceList(file_filter_fn(self.data))
+        return FileReferenceList(file_filter_fn(self.data, *args, **kwargs))
+
+    def filter_list_by_path(self, directory=None, name=None, extension=None):
+        return self.filter_list(file_filters.custom_path_filter, directory, name, extension)
 
     def get_total_bytes(self):
         """Sum the total size of each file represented in the list

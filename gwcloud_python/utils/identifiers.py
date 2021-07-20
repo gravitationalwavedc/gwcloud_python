@@ -2,8 +2,16 @@ def _file_suffix(file_path, suffix):
     return file_path.suffix == f'.{suffix}'
 
 
-def _file_beginning(file_path, beginning):
-    return file_path.parts[0] == beginning
+def _file_base_dir(file_path, directory):
+    return file_path.parts[0] == directory
+
+
+def _file_dir(file_path, directory):
+    return directory in file_path.parts[:-1]
+
+
+def _file_name(file_path, name):
+    return name in file_path.name
 
 
 def _file_end(file_path, end):
@@ -55,7 +63,7 @@ def data_dir(file_path):
     bool
         True if path starts with 'data' directory, False otherwise
     """
-    return _file_beginning(file_path, 'data')
+    return _file_base_dir(file_path, 'data')
 
 
 def result_dir(file_path):
@@ -71,7 +79,7 @@ def result_dir(file_path):
     bool
         True if path starts with 'result' directory, False otherwise
     """
-    return _file_beginning(file_path, 'result')
+    return _file_base_dir(file_path, 'result')
 
 
 def config_file(file_path):
