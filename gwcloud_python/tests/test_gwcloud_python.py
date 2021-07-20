@@ -114,7 +114,8 @@ def job_file_request(setup_mock_gwdc):
                 job_file_data_1,
                 job_file_data_2,
                 job_file_data_3
-            ]
+            ],
+            "isUploadedJob": False
         }
     })
 
@@ -165,7 +166,7 @@ def test_get_user_jobs(user_jobs):
 def test_gwcloud_files_by_job_id(job_file_request):
     gwc = GWCloud(token='my_token')
 
-    file_list = gwc._get_files_by_job_id('arbitrary_job_id')
+    file_list, is_uploaded_job = gwc._get_files_by_job_id('arbitrary_job_id')
 
     for i, ref in enumerate(file_list):
         assert ref == FileReference(**convert_dict_keys(job_file_request[i]))

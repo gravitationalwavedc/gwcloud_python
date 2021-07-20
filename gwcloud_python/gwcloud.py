@@ -16,6 +16,7 @@ from .utils import rename_dict_keys, convert_dict_keys
 
 GWCLOUD_ENDPOINT = 'https://gwcloud.org.au/bilby/graphql'
 GWCLOUD_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/job/apiv1/file/?fileId='
+GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/bilby/file_download/?fileId='
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -136,7 +137,16 @@ class GWCloud:
         return self.get_public_job_list(search="preferred lasky", time_range=TimeRange.ANY)
 
     def _get_job_model_from_query(self, query_data):
-        return BilbyJob(client=self, **rename_dict_keys(query_data, [('id', 'job_id'), ('jobStatus', 'job_status')]))
+        return BilbyJob(
+            client=self,
+            **rename_dict_keys(
+                query_data,
+                [
+                    ('id', 'job_id'),
+                    ('jobStatus', 'job_status'),
+                ]
+            )
+        )
 
     def get_public_job_list(self, search="", time_range=TimeRange.ANY, number=100):
         """Obtains a list of public Bilby jobs, filtering based on the search terms
@@ -255,6 +265,7 @@ class GWCloud:
                         fileSize
                         downloadToken
                     }
+                    isUploadedJob
                 }
             }
         """
@@ -272,10 +283,14 @@ class GWCloud:
             f.pop('isDir')
             file_list.append(FileReference(**convert_dict_keys(f)))
 
-        return file_list
+        return file_list, data['bilbyResultFiles']['isUploadedJob']
 
-    def _get_file_map_fn(self, file_id, file_path, progress_bar):
-        download_url = GWCLOUD_FILE_DOWNLOAD_ENDPOINT + str(file_id)
+    def _get_file_map_fn(self, file_id, file_path, progress_bar, is_uploaded_job=False):
+        endpoint = GWCLOUD_FILE_DOWNLOAD_ENDPOINT \
+            if not is_uploaded_job else \
+            GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
+
+        download_url = endpoint + str(file_id)
         content = b''
         with requests.get(download_url, stream=True) as request:
             for chunk in request.iter_content(chunk_size=1024 * 16, decode_unicode=True):
@@ -283,7 +298,7 @@ class GWCloud:
                 content += chunk
         return (file_path, content)
 
-    def _get_files_by_reference(self, job_id, file_references):
+    def _get_files_by_reference(self, job_id, file_references, is_uploaded_job=False):
         """Obtains file data when provided a job ID and a FileReferenceList
 
         Parameters
@@ -303,14 +318,26 @@ class GWCloud:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             progress = tqdm(total=file_references.get_total_bytes(), leave=True, unit='B', unit_scale=True)
-            files = list(executor.map(partial(self._get_file_map_fn, progress_bar=progress), file_ids, file_paths))
+            files = list(
+                executor.map(
+                    partial(
+                        self._get_file_map_fn,
+                        progress_bar=progress,
+                        is_uploaded_job=is_uploaded_job
+                    ), file_ids, file_paths
+                )
+            )
             progress.close()
             logger.info(f'All {len(file_ids)} files downloaded!')
 
         return files
 
-    def _save_file_map_fn(self, file_id, file_path, progress_bar):
-        download_url = GWCLOUD_FILE_DOWNLOAD_ENDPOINT + str(file_id)
+    def _save_file_map_fn(self, file_id, file_path, progress_bar, is_uploaded_job=False):
+        endpoint = GWCLOUD_FILE_DOWNLOAD_ENDPOINT \
+            if not is_uploaded_job else \
+            GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
+
+        download_url = endpoint + str(file_id)
         file_path.parents[0].mkdir(parents=True, exist_ok=True)
 
         with requests.get(download_url, stream=True) as request:
@@ -319,7 +346,8 @@ class GWCloud:
                     progress_bar.update(len(chunk))
                     f.write(chunk)
 
-    def _save_files_by_reference(self, job_id, file_references, root_path, preserve_directory_structure=True):
+    def _save_files_by_reference(self, job_id, file_references, root_path, preserve_directory_structure=True,
+                                 is_uploaded_job=False):
         """Save files when provided a job ID and a FileReferenceList
 
         Parameters
@@ -343,10 +371,18 @@ class GWCloud:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             progress = tqdm(total=file_references.get_total_bytes(), leave=True, unit='B', unit_scale=True)
-            list(executor.map(partial(self._save_file_map_fn, progress_bar=progress), file_ids, file_paths))
+            list(
+                executor.map(
+                    partial(
+                        self._save_file_map_fn,
+                        progress_bar=progress,
+                        is_uploaded_job=is_uploaded_job
+                    ),
+                    file_ids, file_paths
+                )
+            )
             progress.close()
-
-        logger.info(f'All {len(file_ids)} files saved!')
+            logger.info(f'All {len(file_ids)} files saved!')
 
         return 'Success'
 

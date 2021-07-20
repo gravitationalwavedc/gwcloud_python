@@ -44,6 +44,7 @@ class BilbyJob:
         self.description = description
         self.status = job_status
         self.other = kwargs
+        self.is_uploaded_job = None
 
     def __repr__(self):
         return f"BilbyJob(name={self.name}, job_id={self.job_id})"
@@ -56,7 +57,8 @@ class BilbyJob:
         .FileReferenceList
             Contains FileReference instances for each of the files associated with this job
         """
-        return self.client._get_files_by_job_id(self.job_id)
+        result, self.is_uploaded_job = self.client._get_files_by_job_id(self.job_id)
+        return result
 
     def get_files_by_reference(self, file_references):
         """Obtain the data for a FileReferenceList
@@ -71,7 +73,7 @@ class BilbyJob:
         list
             List of tuples with the file path and downloaded file contents as a byte string
         """
-        return self.client._get_files_by_reference(self.job_id, file_references)
+        return self.client._get_files_by_reference(self.job_id, file_references, self.is_uploaded_job)
 
     def save_files_by_reference(self, file_references, root_path, preserve_directory_structure=True):
         """Save the files represented in a FileReferenceList
@@ -91,7 +93,7 @@ class BilbyJob:
             Success message
         """
         return self.client._save_files_by_reference(
-            self.job_id, file_references, root_path, preserve_directory_structure
+            self.job_id, file_references, root_path, preserve_directory_structure, self.is_uploaded_job
         )
 
     @classmethod

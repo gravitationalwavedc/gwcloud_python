@@ -73,7 +73,7 @@ def setup_mock_gwcloud(mocker, full):
         pass
 
     def mock_get_files_by_job_id(self, job_id):
-        return full
+        return full, {'bilbyResultFiles': {'isUploadedJob': False}}
 
     mocker.patch('gwcloud_python.gwcloud.GWCloud.__init__', mock_init)
     mocker.patch('gwcloud_python.gwcloud.GWCloud._get_files_by_job_id', mock_get_files_by_job_id)
