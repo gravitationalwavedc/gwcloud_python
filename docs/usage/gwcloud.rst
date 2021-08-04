@@ -15,15 +15,14 @@ We are able to obtain information on the list of preferred Bilby jobs by running
 
     jobs = gwc.get_preferred_job_list()
 
-This method returns a list of BilbyJob instances, each containing the information of the job in the GWCloud job database:
+This method returns a list of BilbyJob instances, such as those shown below, each containing the information of the job in the GWCloud job database:
 
 ::
 
-    BilbyJob(job_id='QmlsYnlKb2JOb2RlOjIxMQ==', name='GW150914', description='Results for gravitational wave event GW150914', other={'user': 'Paul Lasky'})
-    BilbyJob(job_id='QmlsYnlKb2JOb2RlOjIxMg==', name='GW151012', description='Results for gravitational wave event GW151012', other={'user': 'Paul Lasky'})
-    BilbyJob(job_id='QmlsYnlKb2JOb2RlOjIxMw==', name='GW170104', description='Results for gravitational wave event GW170104', other={'user': 'Paul Lasky'})
-    BilbyJob(job_id='QmlsYnlKb2JOb2RlOjIxNA==', name='GW170729', description='Results for gravitational wave event GW170729', other={'user': 'Paul Lasky'})
-    BilbyJob(job_id='QmlsYnlKb2JOb2RlOjIxNQ==', name='GW170823', description='Results for gravitational wave event GW170823', other={'user': 'Paul Lasky'})
+    BilbyJob(name=GW150914, job_id=QmlsYnlKb2JOb2RlOjIxMQ==)
+    BilbyJob(name=GW151012, job_id=QmlsYnlKb2JOb2RlOjIxMg==)
+    BilbyJob(name=GW170104, job_id=QmlsYnlKb2JOb2RlOjIxMw==)
+    ...
 
 We are able to use these BilbyJob class instances to interact with the results of these jobs.
 
@@ -40,9 +39,6 @@ We are able to use this method to search the public jobs. For example, if we wis
     jobs = gwc.get_public_job_list(search="Thomas Reichardt", time_range=TimeRange.ANY)
 
 The fields in this method operate exactly the same as on the website. We recommend using the :class:`~gwcloud_python.gwcloud.TimeRange` enum class to set the `time_range` field, though strings are still accepted.
-
-For the sake of clarity, the :meth:`~gwcloud_python.gwcloud.GWCloud.get_preferred_job_list` method is effectively shorthand for performing a search on the public job list with the search terms "preferred lasky" with the time range set to "Any time".
-
 
 Obtaining a single specific job
 -------------------------------
