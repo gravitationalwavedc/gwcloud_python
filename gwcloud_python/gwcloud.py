@@ -35,6 +35,13 @@ class TimeRange(Enum):
     YEAR = "Past year"
 
 
+class Cluster(Enum):
+    """Enum to identify which cluster to submit a job to"""
+    DEFAULT = None
+    OZSTAR = 'ozstar'
+    CIT = 'cit'
+
+
 class GWCloud:
     """
     GWCloud class provides an API for interacting with Bilby, allowing jobs to be submitted and acquired.
@@ -54,7 +61,7 @@ class GWCloud:
     def __init__(self, token, endpoint=GWCLOUD_ENDPOINT):
         self.client = GWDC(token=token, endpoint=endpoint)
 
-    def start_bilby_job_from_string(self, job_name, job_description, private, ini_string):
+    def start_bilby_job_from_string(self, job_name, job_description, private, ini_string, cluster=Cluster.DEFAULT):
         """Submit the parameters required to start a Bilby job, using the contents of an .ini file
 
         Parameters
@@ -67,6 +74,8 @@ class GWCloud:
             True if job should be private, False if public
         ini_string : str
             The contents of a Bilby ini file
+        cluster : Cluster or str
+            The name of the cluster to submit the job to
 
         Returns
         -------
@@ -89,7 +98,8 @@ class GWCloud:
                     "details": {
                         "name": job_name,
                         "description": job_description,
-                        "private": private
+                        "private": private,
+                        "cluster": cluster
                     },
                     "iniString": {
                         "iniString": ini_string
@@ -102,7 +112,7 @@ class GWCloud:
         job_id = data['newBilbyJobFromIniString']['result']['jobId']
         return self.get_job_by_id(job_id)
 
-    def start_bilby_job_from_file(self, job_name, job_description, private, ini_file):
+    def start_bilby_job_from_file(self, job_name, job_description, private, ini_file, cluster=Cluster.DEFAULT):
         """Submit the parameters required to start a Bilby job, using an .ini file
 
         Parameters
@@ -115,6 +125,8 @@ class GWCloud:
             True if job should be private, False if public
         ini_file : str or Path
             Path to an .ini file for running a Bilby job
+        cluster : Cluster or str
+            The name of the cluster to submit the job to
 
         Returns
         -------
@@ -124,7 +136,7 @@ class GWCloud:
         ini_file = Path(ini_file)
         with ini_file.open() as f:
             ini_string = f.read().strip()
-            return self.start_bilby_job_from_string(job_name, job_description, private, ini_string)
+            return self.start_bilby_job_from_string(job_name, job_description, private, ini_string, cluster)
 
     def get_preferred_job_list(self):
         """Get list of public Bilby jobs corresponding to a search of "preferred" and a time_range of "Any time"
