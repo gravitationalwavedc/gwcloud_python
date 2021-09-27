@@ -1,4 +1,4 @@
-from gwcloud_python import GWCloud, FileReference
+from gwcloud_python import GWCloud, FileReference, JobStatus
 from gwcloud_python.utils import convert_dict_keys
 import pytest
 
@@ -135,7 +135,10 @@ def test_get_job_by_id(single_job_request):
     assert job.job_id == single_job_request["id"]
     assert job.name == single_job_request["name"]
     assert job.description == single_job_request["description"]
-    assert job.status == single_job_request["jobStatus"]
+    assert job.status == JobStatus(
+        status=single_job_request["jobStatus"]["name"],
+        date=single_job_request["jobStatus"]["date"]
+    )
     assert job.other['userId'] == single_job_request["userId"]
 
 
@@ -147,19 +150,28 @@ def test_get_user_jobs(user_jobs):
     assert jobs[0].job_id == user_jobs[0]["id"]
     assert jobs[0].name == user_jobs[0]["name"]
     assert jobs[0].description == user_jobs[0]["description"]
-    assert jobs[0].status == user_jobs[0]["jobStatus"]
+    assert jobs[0].status == JobStatus(
+        status=user_jobs[0]["jobStatus"]["name"],
+        date=user_jobs[0]["jobStatus"]["date"]
+    )
     assert jobs[0].other['userId'] == user_jobs[0]["userId"]
 
     assert jobs[1].job_id == user_jobs[1]["id"]
     assert jobs[1].name == user_jobs[1]["name"]
     assert jobs[1].description == user_jobs[1]["description"]
-    assert jobs[1].status == user_jobs[1]["jobStatus"]
+    assert jobs[1].status == JobStatus(
+        status=user_jobs[1]["jobStatus"]["name"],
+        date=user_jobs[1]["jobStatus"]["date"]
+    )
     assert jobs[1].other['userId'] == user_jobs[1]["userId"]
 
     assert jobs[2].job_id == user_jobs[2]["id"]
     assert jobs[2].name == user_jobs[2]["name"]
     assert jobs[2].description == user_jobs[2]["description"]
-    assert jobs[2].status == user_jobs[2]["jobStatus"]
+    assert jobs[2].status == JobStatus(
+        status=user_jobs[2]["jobStatus"]["name"],
+        date=user_jobs[2]["jobStatus"]["date"]
+    )
     assert jobs[2].other['userId'] == user_jobs[2]["userId"]
 
 

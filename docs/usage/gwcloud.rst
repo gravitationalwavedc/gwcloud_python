@@ -5,6 +5,17 @@ The GWCloud class will be used to handle all requests to the GWCloud server.
 The public methods of the GWCloud class are focused on searching for and obtaining information for specific Bilby jobs.
 Below we will walk through some of the more common use cases.
 
+Instantiating
+-------------
+
+As discussed in the previous section, we must first instantiate the class with our API token, to authenticate with the GWCloud service:
+
+::
+
+    from gwcloud_python import GWCloud
+
+    gwc = GWCloud(token='my_unique_gwcloud_api_token')
+
 Obtaining the preferred jobs
 ----------------------------
 

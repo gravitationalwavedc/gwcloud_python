@@ -1,7 +1,6 @@
 import concurrent.futures
 import logging
 import tarfile
-from enum import Enum
 from functools import partial
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -12,6 +11,7 @@ from tqdm import tqdm
 
 from .bilby_job import BilbyJob
 from .file_reference import FileReference, FileReferenceList
+from .helpers import TimeRange, Cluster
 from .utils import rename_dict_keys, convert_dict_keys
 
 GWCLOUD_ENDPOINT = 'https://gwcloud.org.au/bilby/graphql'
@@ -24,22 +24,6 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 logger.addHandler(ch)
-
-
-class TimeRange(Enum):
-    """Enum to help with the time range field in the public job search."""
-    ANY = "Any time"
-    DAY = "Past 24 hours"
-    WEEK = "Past week"
-    MONTH = "Past month"
-    YEAR = "Past year"
-
-
-class Cluster(Enum):
-    """Enum to identify which cluster to submit a job to"""
-    DEFAULT = None
-    OZSTAR = 'ozstar'
-    CIT = 'cit'
 
 
 class GWCloud:
@@ -74,7 +58,7 @@ class GWCloud:
             True if job should be private, False if public
         ini_string : str
             The contents of a Bilby ini file
-        cluster : Cluster or str
+        cluster : .Cluster or str
             The name of the cluster to submit the job to
 
         Returns
@@ -102,7 +86,7 @@ class GWCloud:
                         "cluster": cluster
                     },
                     "iniString": {
-                        "iniString": ini_string
+                        "iniString": str(ini_string)
                     }
                 },
             }
@@ -125,7 +109,7 @@ class GWCloud:
             True if job should be private, False if public
         ini_file : str or Path
             Path to an .ini file for running a Bilby job
-        cluster : Cluster or str
+        cluster : .Cluster or str
             The name of the cluster to submit the job to
 
         Returns
@@ -149,6 +133,9 @@ class GWCloud:
         return self.get_public_job_list(search="preferred lasky", time_range=TimeRange.ANY)
 
     def _get_job_model_from_query(self, query_data):
+        if not query_data:
+            # logger.info('No')
+            return None
         return BilbyJob(
             client=self,
             **rename_dict_keys(
@@ -168,7 +155,7 @@ class GWCloud:
         ----------
         search : str, optional
             Search terms by which to filter public job list, by default ""
-        time_range : TimeRange or str, optional
+        time_range : .TimeRange or str, optional
             Time range by which to filter job list, by default TimeRange.ANY
         number : int, optional
             Number of job results to return in one request, by default 100
@@ -205,6 +192,10 @@ class GWCloud:
 
         data = self.client.request(query=query, variables=variables)
 
+        if not data['publicBilbyJobs']['edges']:
+            logger.info('Job search returned no results.')
+            return []
+
         return [self._get_job_model_from_query(job['node']) for job in data['publicBilbyJobs']['edges']]
 
     def get_job_by_id(self, job_id):
@@ -240,6 +231,10 @@ class GWCloud:
         }
 
         data = self.client.request(query=query, variables=variables)
+
+        if not data['bilbyJob']:
+            logger.info('No job matching input ID was returned.')
+            return None
 
         return self._get_job_model_from_query(data['bilbyJob'])
 

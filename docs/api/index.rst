@@ -8,4 +8,5 @@ API Reference
    gwcloud
    bilbyjob
    filereference
+   helpers
    utils

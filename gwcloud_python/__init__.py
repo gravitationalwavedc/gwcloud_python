@@ -1,6 +1,7 @@
-from .gwcloud import GWCloud, TimeRange
+from .gwcloud import GWCloud
 from .bilby_job import BilbyJob
 from .file_reference import FileReference, FileReferenceList
+from .helpers import TimeRange, Cluster, JobStatus
 
 try:
     from importlib.metadata import version

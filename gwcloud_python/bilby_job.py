@@ -1,5 +1,6 @@
 import logging
 from .utils import file_filters
+from .helpers import JobStatus
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -42,7 +43,7 @@ class BilbyJob:
         self.job_id = job_id
         self.name = name
         self.description = description
-        self.status = job_status
+        self.status = JobStatus(status=job_status['name'], date=job_status['date'])
         self.other = kwargs
         self.is_uploaded_job = None
 
