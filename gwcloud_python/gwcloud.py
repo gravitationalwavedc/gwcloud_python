@@ -83,7 +83,7 @@ class GWCloud:
                         "name": job_name,
                         "description": job_description,
                         "private": private,
-                        "cluster": cluster
+                        "cluster": cluster.value if isinstance(cluster, Cluster) else cluster
                     },
                     "iniString": {
                         "iniString": str(ini_string)
@@ -122,15 +122,20 @@ class GWCloud:
             ini_string = f.read().strip()
             return self.start_bilby_job_from_string(job_name, job_description, private, ini_string, cluster)
 
-    def get_preferred_job_list(self):
+    def get_preferred_job_list(self, search=""):
         """Get list of public Bilby jobs corresponding to a search of "preferred" and a time_range of "Any time"
+
+        Parameters
+        ----------
+        search : str, optional
+            Search terms by which to filter public job list, by default ""
 
         Returns
         -------
         list
-            List of BilbyJob instances
+            List of BilbyJob instances for the preferred jobs corresponding to the search terms
         """
-        return self.get_public_job_list(search="preferred lasky", time_range=TimeRange.ANY)
+        return self.get_public_job_list(search=f"preferred lasky {search}", time_range=TimeRange.ANY)
 
     def _get_job_model_from_query(self, query_data):
         if not query_data:
@@ -238,10 +243,23 @@ class GWCloud:
 
         return self._get_job_model_from_query(data['bilbyJob'])
 
-    def _get_user_jobs(self):
+    def get_user_jobs(self, number=100):
+        """Obtains a list of Bilby jobs created by the user, filtering based on the search terms
+        and the time range within which the job was created.
+
+        Parameters
+        ----------
+        number : int, optional
+            Number of job results to return in one request, by default 100
+
+        Returns
+        -------
+        list
+            List of BilbyJob instances for the jobs corresponding to the search terms and in the specified time range
+        """
         query = """
-            query {
-                bilbyJobs {
+            query ($first: Int){
+                bilbyJobs (first: $first){
                     edges {
                         node {
                             id
@@ -257,8 +275,12 @@ class GWCloud:
                 }
             }
         """
-        
-        data = self.client.request(query=query)
+
+        variables = {
+            "first": number
+        }
+
+        data = self.client.request(query=query, variables=variables)
 
         return [self._get_job_model_from_query(job['node']) for job in data['bilbyJobs']['edges']]
 
@@ -348,7 +370,7 @@ class GWCloud:
         file_path.parents[0].mkdir(parents=True, exist_ok=True)
 
         with requests.get(download_url, stream=True) as request:
-            with file_path.open("ab") as f:
+            with file_path.open("wb+") as f:
                 for chunk in request.iter_content(chunk_size=1024 * 16):
                     progress_bar.update(len(chunk))
                     f.write(chunk)

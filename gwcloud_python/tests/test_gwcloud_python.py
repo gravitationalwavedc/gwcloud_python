@@ -145,7 +145,7 @@ def test_get_job_by_id(single_job_request):
 def test_get_user_jobs(user_jobs):
     gwc = GWCloud(token='my_token')
 
-    jobs = gwc._get_user_jobs()
+    jobs = gwc.get_user_jobs()
 
     assert jobs[0].job_id == user_jobs[0]["id"]
     assert jobs[0].name == user_jobs[0]["name"]

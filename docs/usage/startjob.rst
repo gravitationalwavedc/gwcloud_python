@@ -38,3 +38,24 @@ Instead of passing in a path to an .ini file, we are also able to pass in the co
     )
 
 This could be used to programmatically modify the contents of an .ini file (in a loop, for example) and submit a new job.
+
+Submitting job to a specific cluster
+------------------------------------
+
+By default, all jobs will be sent to OzSTAR. However, we can specify which cluster the job should be sent to by using the cluster argument in the previous methods.
+For example, if we wish to send our job to the Caltech cluster, we can run:
+
+::
+
+    from gwcloud_python import Cluster
+
+    job = gwc.start_bilby_job_from_string(
+        job_name="CIT_Job",
+        job_description="OzSTAR just isn't cutting it",
+        private=True,
+        ini_string=contents_of_ini_file,
+        cluster=Cluster.CIT
+    )
+
+The Cluster enum is provided as a utility to help avoid mistakes, though the string "cit" would still be accepted.
+For the list of available clusters, we can check the :class:`.Cluster` class.

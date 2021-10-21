@@ -49,7 +49,7 @@ We are able to use this method to search the public jobs. For example, if we wis
     from gwcloud_python import TimeRange
     jobs = gwc.get_public_job_list(search="Thomas Reichardt", time_range=TimeRange.ANY)
 
-The fields in this method operate exactly the same as on the website. We recommend using the :class:`~gwcloud_python.gwcloud.TimeRange` enum class to set the `time_range` field, though strings are still accepted.
+The fields in this method operate exactly the same as on the website. We recommend using the :class:`.TimeRange` enum class to set the `time_range` field, though strings are still accepted.
 
 Obtaining a single specific job
 -------------------------------
