@@ -10,9 +10,10 @@ from gwdc_python import GWDC
 from tqdm import tqdm
 
 from .bilby_job import BilbyJob
+from .event_id import EventID
 from .file_reference import FileReference, FileReferenceList
 from .helpers import TimeRange, Cluster
-from .utils import rename_dict_keys, convert_dict_keys
+from .utils import convert_dict_keys
 
 GWCLOUD_ENDPOINT = 'https://gwcloud.org.au/bilby/graphql'
 GWCLOUD_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/job/apiv1/file/?fileId='
@@ -35,7 +36,7 @@ class GWCloud:
     token : str
         API token for a Bilby user
     endpoint : str, optional
-            URL to which we send the queries, by default GWCLOUD_ENDPOINT
+        URL to which we send the queries, by default GWCLOUD_ENDPOINT
 
     Attributes
     ----------
@@ -44,6 +45,7 @@ class GWCloud:
     """
     def __init__(self, token, endpoint=GWCLOUD_ENDPOINT):
         self.client = GWDC(token=token, endpoint=endpoint)
+        self.request = self.client.request  # Setting shorthand for simplicity
 
     def start_bilby_job_from_string(self, job_name, job_description, private, ini_string, cluster=Cluster.DEFAULT):
         """Submit the parameters required to start a Bilby job, using the contents of an .ini file
@@ -92,7 +94,7 @@ class GWCloud:
             }
         }
 
-        data = self.client.request(query=query, variables=variables)
+        data = self.request(query=query, variables=variables)
         job_id = data['newBilbyJobFromIniString']['result']['jobId']
         return self.get_job_by_id(job_id)
 
@@ -143,11 +145,10 @@ class GWCloud:
             return None
         return BilbyJob(
             client=self,
-            **rename_dict_keys(
+            **convert_dict_keys(
                 query_data,
                 [
                     ('id', 'job_id'),
-                    ('jobStatus', 'job_status'),
                 ]
             )
         )
@@ -195,7 +196,7 @@ class GWCloud:
             "first": number
         }
 
-        data = self.client.request(query=query, variables=variables)
+        data = self.request(query=query, variables=variables)
 
         if not data['publicBilbyJobs']['edges']:
             logger.info('Job search returned no results.')
@@ -227,6 +228,12 @@ class GWCloud:
                         name
                         date
                     }
+                    eventId {
+                        eventId
+                        triggerId
+                        nickname
+                        isLigoEvent
+                    }
                 }
             }
         """
@@ -235,7 +242,7 @@ class GWCloud:
             "id": job_id
         }
 
-        data = self.client.request(query=query, variables=variables)
+        data = self.request(query=query, variables=variables)
 
         if not data['bilbyJob']:
             logger.info('No job matching input ID was returned.')
@@ -270,6 +277,12 @@ class GWCloud:
                                 name
                                 date
                             }
+                            eventId {
+                                eventId
+                                triggerId
+                                nickname
+                                isLigoEvent
+                            }
                         }
                     }
                 }
@@ -280,7 +293,7 @@ class GWCloud:
             "first": number
         }
 
-        data = self.client.request(query=query, variables=variables)
+        data = self.request(query=query, variables=variables)
 
         return [self._get_job_model_from_query(job['node']) for job in data['bilbyJobs']['edges']]
 
@@ -303,7 +316,7 @@ class GWCloud:
             "jobId": job_id
         }
 
-        data = self.client.request(query=query, variables=variables)
+        data = self.request(query=query, variables=variables)
 
         file_list = FileReferenceList()
         for f in data['bilbyResultFiles']['files']:
@@ -464,7 +477,7 @@ class GWCloud:
             }
         }
 
-        data = self.client.request(query=query, variables=variables)
+        data = self.request(query=query, variables=variables)
 
         return data['generateFileDownloadIds']['result']
 
@@ -484,7 +497,7 @@ class GWCloud:
             }
         """
 
-        data = self.client.request(query=query)
+        data = self.request(query=query)
         return data['generateBilbyJobUploadToken']['token']
 
     def upload_job_archive(self, description, job_archive, public=False):
@@ -528,7 +541,7 @@ class GWCloud:
                 }
             }
 
-            data = self.client.request(query=query, variables=variables, authorize=False)
+            data = self.request(query=query, variables=variables, authorize=False)
 
         job_id = data['uploadBilbyJob']['result']['jobId']
         return self.get_job_by_id(job_id)
@@ -563,3 +576,166 @@ class GWCloud:
 
             # Upload the archive
             return self.upload_job_archive(description, f.name, public)
+
+    def create_event_id(self, event_id, trigger_id=None, nickname=None, is_ligo_event=False):
+        """Create an Event ID that can be assigned to Bilby Jobs
+
+        **INFO**:
+        *Event IDs can only be created by a select few users.*
+
+        Parameters
+        ----------
+        event_id : str
+            ID of the event, must be of the form GW123456_123456
+        trigger_id : str, optional
+            Trigger ID of the event, must be of the form S123456a, by default None
+        nickname : str, optional
+            Common name used to identify the event, by default None
+        is_ligo_event : bool, optional
+            Should the event be visible to ligo users only, by default False
+
+        Returns
+        -------
+        .EventID
+            The created Event ID
+        """
+        query = """
+            mutation CreateEventIDMutation($input: EventIDMutationInput!) {
+                createEventId (input: $input) {
+                    result
+                }
+            }
+        """
+        variables = {
+            "input": {
+                "eventId": event_id,
+                "triggerId": trigger_id,
+                "nickname": nickname,
+                "isLigoEvent": is_ligo_event,
+            }
+        }
+        data = self.request(query=query, variables=variables)
+        logger.info(data['createEventId']['result'])
+        return self.get_event_id(event_id=event_id)
+
+    def update_event_id(self, event_id, trigger_id=None, nickname=None, is_ligo_event=None):
+        """Create an Event ID that can be assigned to Bilby Jobs
+
+        **INFO**:
+        *Event IDs can only be updated by a select few users.*
+
+        Parameters
+        ----------
+        event_id : str
+            ID of the event, must be of the form GW123456_123456
+        trigger_id : str, optional
+            Trigger ID of the event, must be of the form S123456a, by default None
+        nickname : str, optional
+            Common name used to identify the event, by default None
+        is_ligo_event : bool, optional
+            Should the event be visible to ligo users only, by default None
+
+        Returns
+        -------
+        .EventID
+            The updated Event ID
+        """
+        query = """
+            mutation UpdateEventIDMutation($input: UpdateEventIDMutationInput!) {
+                updateEventId (input: $input) {
+                    result
+                }
+            }
+        """
+        variables = {
+            "input": {
+                "eventId": event_id,
+                "triggerId": trigger_id,
+                "nickname": nickname,
+                "isLigoEvent": is_ligo_event,
+            }
+        }
+        data = self.request(query=query, variables=variables)
+        logger.info(data['updateEventId']['result'])
+        return self.get_event_id(event_id=event_id)
+
+    def delete_event_id(self, event_id):
+        """Delete an Event ID
+
+        **INFO**:
+        *Event IDs can only be deleted by a select few users.*
+
+        Parameters
+        ----------
+        event_id : str
+            ID of the event, must be of the form GW123456_123456
+        """
+        query = """
+            mutation DeleteEventIDMutation($input: DeleteEventIDMutationInput!) {
+                deleteEventId (input: $input) {
+                    result
+                }
+            }
+        """
+        variables = {
+            "input": {
+                "eventId": event_id
+            }
+        }
+        data = self.request(query=query, variables=variables)
+        logger.info(data['deleteEventId']['result'])
+
+    def get_event_id(self, event_id):
+        """Get EventID by the event_id
+
+        Parameters
+        ----------
+        event_id : str
+            Event ID of the form GW123456_123456
+
+        Returns
+        -------
+        .EventID
+            The requested Event ID
+        """
+        query = """
+            query ($eventId: String!){
+                eventId (eventId: $eventId) {
+                    eventId
+                    triggerId
+                    nickname
+                    isLigoEvent
+                }
+            }
+        """
+        variables = {
+            "eventId": event_id
+        }
+        data = self.request(query=query, variables=variables)
+        return EventID(**convert_dict_keys(data['eventId']))
+
+    def get_all_event_ids(self):
+        """Obtain a list of all Event IDs
+
+        Parameters
+        ----------
+        event_id : str
+            ID of the event, must be of the form GW123456_123456
+
+        Returns
+        -------
+        list
+            A list of all .EventID objects
+        """
+        query = """
+            query {
+                allEventIds {
+                    eventId
+                    triggerId
+                    nickname
+                    isLigoEvent
+                }
+            }
+        """
+        data = self.request(query=query)
+        return [EventID(**convert_dict_keys(event)) for event in data['allEventIds']]

@@ -1,6 +1,7 @@
 import logging
 from .utils import file_filters
 from .helpers import JobStatus
+from .event_id import EventID
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -117,6 +118,42 @@ class BilbyJob:
         """
         _register_file_list_filter(name, file_list_filter_fn)
         cls.DEFAULT_FILE_LIST_FILTERS[f'{name}'] = file_list_filter_fn
+
+    def set_event_id(self, event_id=None):
+        """Set the Event ID of a Bilby Job
+
+        Parameters
+        ----------
+        event_id : EventID or str
+            The desired Event ID, by default None
+        """
+        query = """
+            mutation BilbyJobEventIDMutation($input: UpdateBilbyJobMutationInput!) {
+                updateBilbyJob(input: $input) {
+                    result
+                }
+            }
+        """
+
+        if isinstance(event_id, EventID):
+            new_event_id = event_id.event_id
+        elif isinstance(event_id, str):
+            new_event_id = event_id
+        elif event_id is None:
+            new_event_id = ''
+        else:
+            raise Exception('Parameter event_id must be an EventID, a string or None')
+
+        variables = {
+            "input": {
+                "jobId": self.job_id,
+                "eventId": new_event_id
+            }
+        }
+
+        data = self.client.request(query=query, variables=variables)
+        self.other['event_id'] = self.client.get_event_id(event_id=event_id)
+        logger.info(data['updateBilbyJob']['result'])
 
 
 def _register_file_list_filter(name, file_list_filter_fn):

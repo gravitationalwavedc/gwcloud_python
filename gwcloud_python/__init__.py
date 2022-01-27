@@ -1,5 +1,6 @@
 from .gwcloud import GWCloud
 from .bilby_job import BilbyJob
+from .event_id import EventID
 from .file_reference import FileReference, FileReferenceList
 from .helpers import TimeRange, Cluster, JobStatus
 
