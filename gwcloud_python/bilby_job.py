@@ -152,7 +152,7 @@ class BilbyJob:
         }
 
         data = self.client.request(query=query, variables=variables)
-        self.other['event_id'] = self.client.get_event_id(event_id=event_id)
+        self.other['event_id'] = self.client.get_event_id(event_id=new_event_id)
         logger.info(data['updateBilbyJob']['result'])
 
 

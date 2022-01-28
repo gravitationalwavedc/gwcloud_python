@@ -708,6 +708,9 @@ class GWCloud:
                 }
             }
         """
+        if event_id == '':
+            return None
+
         variables = {
             "eventId": event_id
         }
