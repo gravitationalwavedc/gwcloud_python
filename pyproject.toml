@@ -19,9 +19,16 @@ importlib-metadata = "^4.5.0"
 Sphinx = {version = "^4.0.2", optional = true}
 sphinx-rtd-theme = {version = "^0.5.2", optional = true}
 tqdm = "^4.61.2"
+pytest = {version = "^5.2", optional = true}
+requests-mock = {version = "^1.8.0", optional = true}
+flake8 = {version = "^3.9.2", optional = true}
+coverage = {version = "^5.5", optional = true}
+pytest-mock = {version = "^3.6.1", optional = true}
+pytest-cov = {version = "^2.12.1", optional = true}
 
 [tool.poetry.extras]
 docs = ["Sphinx", "sphinx-rtd-theme"]
+gitlab = ["pytest", "requests-mock", "flake8", "coverage", "pytest-mock", "pytest-cov"]
 
 [tool.poetry.dev-dependencies]
 gwdc-python = {path = "../gwdc-python/", develop = true}
