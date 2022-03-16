@@ -1,5 +1,6 @@
 import concurrent.futures
 import logging
+import os
 import tarfile
 from functools import partial
 from pathlib import Path
@@ -47,6 +48,49 @@ class GWCloud:
         self.client = GWDC(token=token, endpoint=endpoint)
         self.request = self.client.request  # Setting shorthand for simplicity
 
+    def _upload_supporting_file(self, token, file_path):
+        """
+        Uploads a supporting file for a job
+
+        Parameters
+        ----------
+        token : str
+            The supporting file upload token
+        file_path : str
+            The local file path to the supporting file to be uploaded
+
+        Returns
+        -------
+        None
+        """
+        query = """
+            mutation SupportingFileUploadMutation($input: UploadSupportingFileMutationInput!) {
+                uploadSupportingFile(input: $input) {
+                    result {
+                        result
+                    }
+                }
+            }
+        """
+
+        file_path = Path(file_path)
+        if not file_path.is_file():
+            raise Exception(f"The supporting file \"{str(file_path)}\" does not exist.")
+
+        with file_path.open('rb') as f:
+            variables = {
+                "input": {
+                    "fileToken": token,
+                    "supportingFile": f
+                }
+            }
+
+            data = self.request(query=query, variables=variables, authorize=False)
+
+        result = data['uploadSupportingFile']['result']['result']
+        if not result:
+            raise Exception("Unable to upload supporting file. An error occurred on the remote side.")
+
     def start_bilby_job_from_string(self, job_name, job_description, private, ini_string, cluster=Cluster.DEFAULT):
         """Submit the parameters required to start a Bilby job, using the contents of an .ini file
 
@@ -73,6 +117,10 @@ class GWCloud:
                 newBilbyJobFromIniString (input: $input) {
                     result {
                         jobId
+                        supportingFiles {
+                            filePath
+                            token
+                        }
                     }
                 }
             }
@@ -95,6 +143,13 @@ class GWCloud:
         }
 
         data = self.request(query=query, variables=variables)
+
+        # Upload any supporting files returned by the job submission
+        print(data)
+        supporting_files = data['newBilbyJobFromIniString']['result']['supportingFiles']
+        for supporting_file in supporting_files:
+            self._upload_supporting_file(supporting_file['token'], supporting_file['filePath'])
+
         job_id = data['newBilbyJobFromIniString']['result']['jobId']
         return self.get_job_by_id(job_id)
 
@@ -119,10 +174,19 @@ class GWCloud:
         str
             Message received from server after job submission
         """
+
+        # Change the working directory to the folder containing the ini file, this will make the supporting file upload
+        # search for files relative to the ini file
+        cwd = Path().resolve()
         ini_file = Path(ini_file)
-        with ini_file.open() as f:
-            ini_string = f.read().strip()
-            return self.start_bilby_job_from_string(job_name, job_description, private, ini_string, cluster)
+        try:
+            print(Path(ini_file).parent)
+            os.chdir(Path(ini_file).parent)
+            with ini_file.open() as f:
+                ini_string = f.read().strip()
+                return self.start_bilby_job_from_string(job_name, job_description, private, ini_string, cluster)
+        finally:
+            os.chdir(str(cwd))
 
     def get_preferred_job_list(self, search=""):
         """Get list of public Bilby jobs corresponding to a search of "preferred" and a time_range of "Any time"
