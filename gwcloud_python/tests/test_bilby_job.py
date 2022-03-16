@@ -1,5 +1,5 @@
-from gwcloud_python import BilbyJob, GWCloud, FileReference, FileReferenceList
 import pytest
+from gwcloud_python import BilbyJob, FileReference, FileReferenceList, EventID
 from gwcloud_python.utils import file_filters
 
 
@@ -68,45 +68,66 @@ def full(png, config, json, index):
 
 
 @pytest.fixture
-def setup_mock_gwcloud(mocker, full):
-    def mock_init(self, token, endpoint='test.endpoint.com'):
-        pass
+def mock_bilby_job(mocker):
+    def bilby_job(methods):
+        config_dict = {f'{key}.return_value': value for key, value in methods.items()}
+        return BilbyJob(
+            client=mocker.Mock(**config_dict),
+            job_id='test_id',
+            name='TestName',
+            description='Test description',
+            user='Test User',
+            event_id={'event_id': 'GW123456'},
+            job_status={
+                'name': 'Completed',
+                'date': '2021-12-02'
+            },
+        )
 
-    def mock_get_files_by_job_id(self, job_id):
-        return full, {'bilbyResultFiles': {'isUploadedJob': False}}
-
-    mocker.patch('gwcloud_python.gwcloud.GWCloud.__init__', mock_init)
-    mocker.patch('gwcloud_python.gwcloud.GWCloud._get_files_by_job_id', mock_get_files_by_job_id)
-
-    return GWCloud(token='test_token')
+    return bilby_job
 
 
 @pytest.fixture
-def bilby_job(setup_mock_gwcloud):
-    return BilbyJob(
-        client=setup_mock_gwcloud,
-        job_id='test_id',
-        name='TestName',
-        description='Test description',
-        job_status={
-            'name': 'Completed',
-            'date': '2021-12-02'
-        }
-    )
+def mock_bilby_job_files(mock_bilby_job, full):
+    return mock_bilby_job({'_get_files_by_job_id': (full, {'bilbyResultFiles': {'isUploadedJob': False}})})
 
 
-def test_bilby_job_full_file_list(bilby_job, full):
+@pytest.fixture
+def mock_bilby_job_update(mock_bilby_job):
+    return mock_bilby_job({'request': {'updateBilbyJob': {'result': 'Success'}}})
+
+
+@pytest.fixture
+def update_query():
+    return """
+            mutation BilbyJobEventIDMutation($input: UpdateBilbyJobMutationInput!) {
+                updateBilbyJob(input: $input) {
+                    result
+                }
+            }
+        """
+
+
+def test_bilby_job_full_file_list(mock_bilby_job_files, full):
+    bilby_job = mock_bilby_job_files
     assert bilby_job.get_full_file_list() == full
 
+    bilby_job.client._get_files_by_job_id.assert_called_once()
 
-def test_bilby_job_file_filters(bilby_job, default, png, corner, config):
+
+def test_bilby_job_file_filters(mocker, mock_bilby_job_files, full, default, png, corner, config):
+    bilby_job = mock_bilby_job_files
     assert file_filters.sort_file_list(bilby_job.get_default_file_list()) == file_filters.sort_file_list(default)
     assert file_filters.sort_file_list(bilby_job.get_png_file_list()) == file_filters.sort_file_list(png)
     assert file_filters.sort_file_list(bilby_job.get_corner_plot_file_list()) == file_filters.sort_file_list(corner)
     assert file_filters.sort_file_list(bilby_job.get_config_file_list()) == file_filters.sort_file_list(config)
 
+    assert bilby_job.client._get_files_by_job_id.call_count == 4
 
-def test_register_file_list_filter(bilby_job, index):
+
+def test_register_file_list_filter(mock_bilby_job_files, index):
+    bilby_job = mock_bilby_job_files
+
     def get_html_file(file_list):
         return [f for f in file_list if f.path.suffix == '.html']
 
@@ -121,3 +142,57 @@ def test_register_file_list_filter(bilby_job, index):
     assert getattr(bilby_job, 'save_index_files', None) is not None
 
     assert bilby_job.get_index_file_list() == index
+
+
+def test_bilbyjob_set_name(mock_bilby_job_update, update_query):
+    bilby_job = mock_bilby_job_update
+
+    assert bilby_job.name == 'TestName'
+    bilby_job.set_name(name='ADifferentName')
+    assert bilby_job.name == 'ADifferentName'
+    bilby_job.client.request.assert_called_once_with(
+        query=update_query,
+        variables={
+            'input': {
+                'jobId': bilby_job.job_id,
+                'name': 'ADifferentName'
+            }
+        }
+    )
+
+
+def test_bilbyjob_set_description(mock_bilby_job_update, update_query):
+    bilby_job = mock_bilby_job_update
+
+    assert bilby_job.description == 'Test description'
+    bilby_job.set_description(description='A different description')
+    assert bilby_job.description == 'A different description'
+    bilby_job.client.request.assert_called_once_with(
+        query=update_query,
+        variables={
+            'input': {
+                'jobId': bilby_job.job_id,
+                'description': 'A different description'
+            }
+        }
+    )
+
+
+def test_bilbyjob_set_event_id(mock_bilby_job, update_query):
+    bilby_job = mock_bilby_job({
+        'request': {'updateBilbyJob': {'result': 'Success'}},
+        'get_event_id': EventID(event_id='GW111111')
+    })
+
+    assert bilby_job.event_id == EventID(event_id='GW123456')
+    bilby_job.set_event_id(event_id='GW111111')
+    assert bilby_job.event_id == EventID(event_id='GW111111')
+    bilby_job.client.request.assert_called_once_with(
+        query=update_query,
+        variables={
+            'input': {
+                'jobId': bilby_job.job_id,
+                'eventId': 'GW111111'
+            }
+        }
+    )

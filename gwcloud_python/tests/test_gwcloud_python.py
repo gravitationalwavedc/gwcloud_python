@@ -1,4 +1,4 @@
-from gwcloud_python import GWCloud, FileReference, JobStatus
+from gwcloud_python import GWCloud, FileReference, JobStatus, EventID
 from gwcloud_python.utils import convert_dict_keys
 import pytest
 
@@ -24,7 +24,10 @@ def single_job_request(setup_mock_gwdc):
         "id": 1,
         "name": "test_name",
         "description": "test description",
-        "userId": 1,
+        "user": "Test User1",
+        "eventId": {
+            "eventId": "GW123456"
+        },
         "jobStatus": {
             "name": "Completed",
             "date": "2021-12-02"
@@ -41,7 +44,10 @@ def multi_job_request(setup_mock_gwdc):
             "id": 1,
             "name": "test_name_1",
             "description": "test description 1",
-            "userId": 1,
+            "user": "Test User1",
+            "eventId": {
+                "eventId": "GW123456"
+            },
             "jobStatus": {
                 "name": "Completed",
                 "date": "2021-01-01"
@@ -52,7 +58,10 @@ def multi_job_request(setup_mock_gwdc):
             "id": 2,
             "name": "test_name_2",
             "description": "test description 2",
-            "userId": 2,
+            "user": "Test User2",
+            "eventId": {
+                "eventId": "GW123456"
+            },
             "jobStatus": {
                 "name": "Completed",
                 "date": "2021-02-02"
@@ -63,7 +72,10 @@ def multi_job_request(setup_mock_gwdc):
             "id": 3,
             "name": "test_name_3",
             "description": "test description 3",
-            "userId": 3,
+            "user": "Test User3",
+            "eventId": {
+                "eventId": "GW123456"
+            },
             "jobStatus": {
                 "name": "Error",
                 "date": "2021-03-03"
@@ -139,7 +151,8 @@ def test_get_job_by_id(single_job_request):
         status=single_job_request["jobStatus"]["name"],
         date=single_job_request["jobStatus"]["date"]
     )
-    assert job.other['user_id'] == single_job_request["userId"]
+    assert job.event_id == EventID(**convert_dict_keys(single_job_request["eventId"]))
+    assert job.user == single_job_request["user"]
 
 
 def test_get_user_jobs(user_jobs):
@@ -154,7 +167,8 @@ def test_get_user_jobs(user_jobs):
         status=user_jobs[0]["jobStatus"]["name"],
         date=user_jobs[0]["jobStatus"]["date"]
     )
-    assert jobs[0].other['user_id'] == user_jobs[0]["userId"]
+    assert jobs[0].event_id == EventID(**convert_dict_keys(user_jobs[0]["eventId"]))
+    assert jobs[0].user == user_jobs[0]["user"]
 
     assert jobs[1].job_id == user_jobs[1]["id"]
     assert jobs[1].name == user_jobs[1]["name"]
@@ -163,7 +177,8 @@ def test_get_user_jobs(user_jobs):
         status=user_jobs[1]["jobStatus"]["name"],
         date=user_jobs[1]["jobStatus"]["date"]
     )
-    assert jobs[1].other['user_id'] == user_jobs[1]["userId"]
+    assert jobs[1].event_id == EventID(**convert_dict_keys(user_jobs[1]["eventId"]))
+    assert jobs[1].user == user_jobs[1]["user"]
 
     assert jobs[2].job_id == user_jobs[2]["id"]
     assert jobs[2].name == user_jobs[2]["name"]
@@ -172,7 +187,8 @@ def test_get_user_jobs(user_jobs):
         status=user_jobs[2]["jobStatus"]["name"],
         date=user_jobs[2]["jobStatus"]["date"]
     )
-    assert jobs[2].other['user_id'] == user_jobs[2]["userId"]
+    assert jobs[2].event_id == EventID(**convert_dict_keys(user_jobs[2]["eventId"]))
+    assert jobs[2].user == user_jobs[2]["user"]
 
 
 def test_gwcloud_files_by_job_id(job_file_request):
