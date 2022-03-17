@@ -13,15 +13,20 @@ default:
 python-tests:
     stage: test
     script:
-      - cd $CI-PROJECT-DIR
+      - cd ..
       - git clone https://github.com/gravitationalwavedc/gwdc_python.git gwdc-python || true
       - cd gwdc-python
       - git pull
-      - cd $CI-PROJECT-PATH
+      - cd ../gwcloud-python
       - pip3 install poetry
       - poetry install
       - poetry run pytest --junitxml=junit.xml --cov-report xml --cov=gwcloud_python
 
+    artifacts:
+      reports:
+        cobertura: src/reports/coverage.xml
+        junit: src/reports/junit.xml
+    
 
 code-quality:
     image: docker:stable
