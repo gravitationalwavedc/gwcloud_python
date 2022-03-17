@@ -147,9 +147,7 @@ class GWCloud:
             client=self,
             **convert_dict_keys(
                 query_data,
-                [
-                    ('id', 'job_id'),
-                ]
+                {'id': 'job_id'}
             )
         )
 
@@ -183,6 +181,12 @@ class GWCloud:
                             jobStatus {
                                 name
                                 date
+                            }
+                            eventId {
+                                eventId
+                                triggerId
+                                nickname
+                                isLigoEvent
                             }
                         }
                     }

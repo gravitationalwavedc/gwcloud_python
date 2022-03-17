@@ -1,5 +1,5 @@
 import logging
-from .utils import file_filters
+from .utils import file_filters, convert_dict_keys
 from .helpers import JobStatus
 from .event_id import EventID
 
@@ -26,6 +26,10 @@ class BilbyJob:
         Job name
     description : str
         Job description
+    user : str
+        User that ran the job
+    event_id : dict
+        Event ID associated with job, should have keys corresponding to an ~gwcloud_python.event_id.EventID object
     job_status : dict
         Status of job, should have 'name' and 'date' keys corresponding to the status code and when it was produced
     kwargs : dict, optional
@@ -39,11 +43,13 @@ class BilbyJob:
         'corner_plot': file_filters.corner_plot_filter,
     }
 
-    def __init__(self, client, job_id, name, description, job_status, **kwargs):
+    def __init__(self, client, job_id, name, description, user, event_id, job_status, **kwargs):
         self.client = client
         self.job_id = job_id
         self.name = name
         self.description = description
+        self.user = user
+        self.event_id = EventID(**event_id) if event_id else None
         self.status = JobStatus(status=job_status['name'], date=job_status['date'])
         self.other = kwargs
         self.is_uploaded_job = None
@@ -119,20 +125,57 @@ class BilbyJob:
         _register_file_list_filter(name, file_list_filter_fn)
         cls.DEFAULT_FILE_LIST_FILTERS[f'{name}'] = file_list_filter_fn
 
-    def set_event_id(self, event_id=None):
-        """Set the Event ID of a Bilby Job
-
-        Parameters
-        ----------
-        event_id : EventID or str
-            The desired Event ID, by default None
-        """
+    def _update_job(self, **kwargs):
         query = """
             mutation BilbyJobEventIDMutation($input: UpdateBilbyJobMutationInput!) {
                 updateBilbyJob(input: $input) {
                     result
                 }
             }
+        """
+
+        variables = {
+            "input": {
+                "jobId": self.job_id,
+                **convert_dict_keys(kwargs, reverse=True)
+            }
+        }
+
+        return self.client.request(query=query, variables=variables)
+
+    def set_name(self, name):
+        """Set the name of a Bilby Job
+
+        Parameters
+        ----------
+        event_id : str
+            The new name
+        """
+
+        data = self._update_job(name=str(name))
+        self.name = name
+        logger.info(data['updateBilbyJob']['result'])
+
+    def set_description(self, description):
+        """Set the description of a Bilby Job
+
+        Parameters
+        ----------
+        event_id : str
+            The new description
+        """
+
+        data = self._update_job(description=str(description))
+        self.description = description
+        logger.info(data['updateBilbyJob']['result'])
+
+    def set_event_id(self, event_id=None):
+        """Set the Event ID of a Bilby Job
+
+        Parameters
+        ----------
+        event_id : EventID or str, optional
+            The desired Event ID, by default None
         """
 
         if isinstance(event_id, EventID):
@@ -144,15 +187,8 @@ class BilbyJob:
         else:
             raise Exception('Parameter event_id must be an EventID, a string or None')
 
-        variables = {
-            "input": {
-                "jobId": self.job_id,
-                "eventId": new_event_id
-            }
-        }
-
-        data = self.client.request(query=query, variables=variables)
-        self.other['event_id'] = self.client.get_event_id(event_id=new_event_id)
+        data = self._update_job(event_id=new_event_id)
+        self.event_id = self.client.get_event_id(event_id=new_event_id)
         logger.info(data['updateBilbyJob']['result'])
 
 
