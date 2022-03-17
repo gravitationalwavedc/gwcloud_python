@@ -24,8 +24,8 @@ python-tests:
 
     artifacts:
       reports:
-        cobertura: src/reports/coverage.xml
-        junit: src/reports/junit.xml
+        cobertura: coverage.xml
+        junit: junit.xml
     
 
 code-quality:
