@@ -131,6 +131,3 @@ def test_convert_dict_keys(snake_case_dict, snake_case_renamed_dict, camel_case_
     # Can convert and rename from key map
     assert renamed_camel_case_dict == snake_case_renamed_dict[1]
     assert renamed_snake_case_dict == camel_case_renamed_dict[1]
-
-
-    
