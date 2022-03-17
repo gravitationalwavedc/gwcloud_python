@@ -13,6 +13,10 @@ default:
 python-tests:
     stage: test
     script:
+      - ls
+      - pwd
+      - echo $CI_PROJECT_PATH
+      - echo $CI_PROJECT_DIR
       - cd ..
       - git clone https://github.com/gravitationalwavedc/gwdc_python.git gwdc-python || true
       - cd gwdc-python
