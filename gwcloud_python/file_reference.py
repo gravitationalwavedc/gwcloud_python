@@ -11,6 +11,8 @@ class FileReference:
     path: str
     file_size: int = field(repr=False)
     download_token: str = field(repr=False)
+    job_id: int = field(repr=False)
+    is_uploaded_job: bool = field(repr=False, default=False)
 
     def __post_init__(self):
         self.path = remove_path_anchor(Path(self.path))
@@ -141,3 +143,15 @@ class FileReferenceList(UserList):
             else:
                 paths.append(root_path / Path(ref.path.name))
         return paths
+
+    def _batch_by_job_id(self):
+        batched = {}
+        for ref in self.data:
+            job_dict = batched.get(ref.job_id, {})
+            files = job_dict.get('files', FileReferenceList())
+            files.append(ref)
+            job_dict['files'] = files
+            job_dict['is_uploaded_job'] = ref.is_uploaded_job
+            batched[ref.job_id] = job_dict
+
+        return batched

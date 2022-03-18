@@ -1,6 +1,10 @@
 from functools import partial
 from pathlib import Path
 import re
+import requests
+
+GWCLOUD_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/job/apiv1/file/?fileId='
+GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/bilby/file_download/?fileId='
 
 
 def write_file_at_path(root_path, file_path, file_contents, preserve_directory_structure=True):
@@ -154,3 +158,32 @@ def convert_dict_keys(input_dict, key_map={}, reverse=False):
     funcs.append(to_camel_case if reverse else to_snake_case)
 
     return recursively_map_dict_keys(input_dict, partial(_apply_key_funcs, funcs=funcs))
+
+
+def _get_file_map_fn(file_id, file_path, progress_bar, is_uploaded_job=False):
+    endpoint = GWCLOUD_FILE_DOWNLOAD_ENDPOINT \
+        if not is_uploaded_job else \
+        GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
+
+    download_url = endpoint + str(file_id)
+    content = b''
+    with requests.get(download_url, stream=True) as request:
+        for chunk in request.iter_content(chunk_size=1024 * 16, decode_unicode=True):
+            progress_bar.update(len(chunk))
+            content += chunk
+    return (file_path, content)
+
+
+def _save_file_map_fn(file_id, file_path, progress_bar, is_uploaded_job=False):
+    endpoint = GWCLOUD_FILE_DOWNLOAD_ENDPOINT \
+        if not is_uploaded_job else \
+        GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
+
+    download_url = endpoint + str(file_id)
+    file_path.parents[0].mkdir(parents=True, exist_ok=True)
+
+    with requests.get(download_url, stream=True) as request:
+        with file_path.open("wb+") as f:
+            for chunk in request.iter_content(chunk_size=1024 * 16):
+                progress_bar.update(len(chunk))
+                f.write(chunk)

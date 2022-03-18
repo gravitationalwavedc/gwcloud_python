@@ -197,4 +197,9 @@ def test_gwcloud_files_by_job_id(job_file_request):
     file_list, is_uploaded_job = gwc._get_files_by_job_id('arbitrary_job_id')
 
     for i, ref in enumerate(file_list):
-        assert ref == FileReference(**convert_dict_keys(job_file_request[i]))
+        job_file_request[i].pop('isDir')
+        assert ref == FileReference(
+            **convert_dict_keys(job_file_request[i]),
+            job_id='arbitrary_job_id',
+            is_uploaded_job=is_uploaded_job,
+        )

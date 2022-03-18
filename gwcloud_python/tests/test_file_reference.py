@@ -7,10 +7,34 @@ from gwcloud_python.utils import remove_path_anchor
 @pytest.fixture
 def setup_dicts():
     return [
-        {'path': 'data/dir/test1.png', 'file_size': '1', 'download_token': 'test_download_token_1'},
-        {'path': 'data/dir/test2.png', 'file_size': '1', 'download_token': 'test_download_token_2'},
-        {'path': 'result/dir/test1.png', 'file_size': '1', 'download_token': 'test_download_token_3'},
-        {'path': 'result/dir/test2.png', 'file_size': '1', 'download_token': 'test_download_token_4'},
+        {
+            'path': 'data/dir/test1.png',
+            'file_size': '1',
+            'download_token': 'test_download_token_1',
+            'job_id': 'id',
+            'is_uploaded_job': False
+        },
+        {
+            'path': 'data/dir/test2.png',
+            'file_size': '1',
+            'download_token': 'test_download_token_2',
+            'job_id': 'id',
+            'is_uploaded_job': False
+        },
+        {
+            'path': 'result/dir/test1.png',
+            'file_size': '1',
+            'download_token': 'test_download_token_3',
+            'job_id': 'id',
+            'is_uploaded_job': True
+        },
+        {
+            'path': 'result/dir/test2.png',
+            'file_size': '1',
+            'download_token': 'test_download_token_4',
+            'job_id': 'id',
+            'is_uploaded_job': True
+        },
     ]
 
 
