@@ -1,18 +1,16 @@
-import concurrent.futures
 import logging
 import tarfile
-from functools import partial
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from gwdc_python import GWDC
-from tqdm import tqdm
 
 from .bilby_job import BilbyJob
 from .event_id import EventID
 from .file_reference import FileReference, FileReferenceList
 from .helpers import TimeRange, Cluster
-from .utils import convert_dict_keys, _get_file_map_fn, _save_file_map_fn
+from .utils import convert_dict_keys
+from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 
 GWCLOUD_ENDPOINT = 'https://gwcloud.org.au/bilby/graphql'
 
@@ -354,30 +352,20 @@ class GWCloud:
         batched_files = file_references._batch_by_job_id()
         for job_id, job_dict in batched_files.items():
             files.append(
-                self._get_files_by_reference(
+                self._get_batched_files(
                     job_id=job_id,
                     file_references=job_dict['files'],
                     is_uploaded_job=job_dict['is_uploaded_job'])
             )
         return files
 
-    def _get_files_by_reference(self, job_id, file_references, is_uploaded_job=False):
+    def _get_batched_files(self, job_id, file_references, is_uploaded_job=False):
         file_ids = self._get_download_ids_from_tokens(job_id, file_references.get_tokens())
         file_paths = file_references.get_paths()
+        total_size = file_references.get_total_bytes()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            progress = tqdm(total=file_references.get_total_bytes(), leave=True, unit='B', unit_scale=True)
-            files = list(
-                executor.map(
-                    partial(
-                        _get_file_map_fn,
-                        progress_bar=progress,
-                        is_uploaded_job=is_uploaded_job
-                    ), file_ids, file_paths
-                )
-            )
-            progress.close()
-            logger.info(f'All {len(file_ids)} files downloaded!')
+        files = _download_files(_get_file_map_fn, file_ids, file_paths, total_size, is_uploaded_job)
+        logger.info(f'All {len(file_ids)} files downloaded!')
 
         return files
 
@@ -402,34 +390,22 @@ class GWCloud:
         """
         batched_files = file_references._batch_by_job_id()
         for job_id, job_dict in batched_files.items():
-            self._save_files_by_reference(
+            self._save_batched_files(
                 job_id=job_id,
                 file_references=job_dict['files'],
                 root_path=root_path,
                 preserve_directory_structure=preserve_directory_structure,
                 is_uploaded_job=job_dict['is_uploaded_job'])
 
-    def _save_files_by_reference(self, job_id, file_references, root_path, preserve_directory_structure=True,
-                                 is_uploaded_job=False):
+    def _save_batched_files(self, job_id, file_references, root_path, preserve_directory_structure=True,
+                            is_uploaded_job=False):
         file_ids = self._get_download_ids_from_tokens(job_id, file_references.get_tokens())
         file_paths = file_references.get_output_paths(root_path, preserve_directory_structure)
+        total_size = file_references.get_total_bytes()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            progress = tqdm(total=file_references.get_total_bytes(), leave=True, unit='B', unit_scale=True)
-            list(
-                executor.map(
-                    partial(
-                        _save_file_map_fn,
-                        progress_bar=progress,
-                        is_uploaded_job=is_uploaded_job
-                    ),
-                    file_ids, file_paths
-                )
-            )
-            progress.close()
-            logger.info(f'All {len(file_ids)} files saved!')
+        _download_files(_save_file_map_fn, file_ids, file_paths, total_size, is_uploaded_job)
 
-        return 'Success'
+        logger.info(f'All {len(file_ids)} files saved!')
 
     def _get_download_id_from_token(self, job_id, file_token):
         """Get a single file download id for a file download token
