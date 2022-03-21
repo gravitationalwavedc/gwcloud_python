@@ -11,8 +11,7 @@ from .file_reference import FileReference, FileReferenceList
 from .helpers import TimeRange, Cluster
 from .utils import convert_dict_keys
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
-
-GWCLOUD_ENDPOINT = 'https://gwcloud.org.au/bilby/graphql'
+from .settings import GWCLOUD_ENDPOINT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

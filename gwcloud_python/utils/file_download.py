@@ -2,10 +2,7 @@ import concurrent.futures
 from functools import partial
 import requests
 from tqdm import tqdm
-
-
-GWCLOUD_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/job/apiv1/file/?fileId='
-GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/bilby/file_download/?fileId='
+from ..settings import GWCLOUD_FILE_DOWNLOAD_ENDPOINT, GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
 
 
 def _get_file_map_fn(file_id, file_path, progress_bar, endpoint):
