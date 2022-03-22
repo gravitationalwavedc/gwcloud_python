@@ -6,68 +6,138 @@ from gwcloud_python import FileReference, FileReferenceList
 @pytest.fixture
 def png_data():
     return FileReferenceList([
-        FileReference(path='data/dir/test1.png', file_size='1', download_token='test_download_token_1'),
-        FileReference(path='data/dir/test2.png', file_size='1', download_token='test_download_token_2'),
+        FileReference(
+            path='data/dir/test1.png',
+            file_size='1',
+            download_token='test_token_1',
+            job_id='id'
+        ),
+        FileReference(
+            path='data/dir/test2.png',
+            file_size='1',
+            download_token='test_token_2',
+            job_id='id'
+        ),
     ])
 
 
 @pytest.fixture
 def png_result():
     return FileReferenceList([
-        FileReference(path='result/dir/test1.png', file_size='1', download_token='test_download_token_3'),
-        FileReference(path='result/dir/test2.png', file_size='1', download_token='test_download_token_4'),
+        FileReference(
+            path='result/dir/test1.png',
+            file_size='1',
+            download_token='test_token_3',
+            job_id='id'
+        ),
+        FileReference(
+            path='result/dir/test2.png',
+            file_size='1',
+            download_token='test_token_4',
+            job_id='id'
+        ),
     ])
 
 
 @pytest.fixture
 def png_extra_no_dir():
     return FileReferenceList([
-        FileReference(path='test1.png', file_size='1', download_token='test_download_token_5'),
-        FileReference(path='test2.png', file_size='1', download_token='test_download_token_6'),
+        FileReference(
+            path='test1.png',
+            file_size='1',
+            download_token='test_token_5',
+            job_id='id'
+        ),
+        FileReference(
+            path='test2.png',
+            file_size='1',
+            download_token='test_token_6',
+            job_id='id'
+        ),
     ])
 
 
 @pytest.fixture
 def png_extra_dir():
     return FileReferenceList([
-        FileReference(path='arbitrary/dir/test1.png', file_size='1', download_token='test_download_token_7'),
-        FileReference(path='arbitrary/dir/test2.png', file_size='1', download_token='test_download_token_8'),
+        FileReference(
+            path='arbitrary/dir/test1.png',
+            file_size='1',
+            download_token='test_token_7',
+            job_id='id'
+        ),
+        FileReference(
+            path='arbitrary/dir/test2.png',
+            file_size='1',
+            download_token='test_token_8',
+            job_id='id'
+        ),
     ])
 
 
 @pytest.fixture
 def corner():
     return FileReferenceList([
-        FileReference(path='test1_corner.png', file_size='1', download_token='test_download_token_9'),
-        FileReference(path='test2_corner.png', file_size='1', download_token='test_download_token_10'),
+        FileReference(
+            path='test1_corner.png',
+            file_size='1',
+            download_token='test_token_9',
+            job_id='id'
+        ),
+        FileReference(
+            path='test2_corner.png',
+            file_size='1',
+            download_token='test_token_10',
+            job_id='id'
+        ),
     ])
 
 
 @pytest.fixture
 def index():
     return FileReferenceList([
-        FileReference(path='index.html', file_size='1', download_token='test_download_token_11'),
+        FileReference(
+            path='index.html',
+            file_size='1',
+            download_token='test_token_11',
+            job_id='id'
+        ),
     ])
 
 
 @pytest.fixture
 def config():
     return FileReferenceList([
-        FileReference(path='a_config_complete.ini', file_size='1', download_token='test_download_token_12'),
+        FileReference(
+            path='a_config_complete.ini',
+            file_size='1',
+            download_token='test_token_12',
+            job_id='id'
+        ),
     ])
 
 
 @pytest.fixture
 def merge():
     return FileReferenceList([
-        FileReference(path='result/dir/a_merge_result.json', file_size='1', download_token='test_download_token_13'),
+        FileReference(
+            path='result/dir/a_merge_result.json',
+            file_size='1',
+            download_token='test_token_13',
+            job_id='id'
+        ),
     ])
 
 
 @pytest.fixture
 def unmerge():
     return FileReferenceList([
-        FileReference(path='result/dir/a_result.json', file_size='1', download_token='test_download_token_14'),
+        FileReference(
+            path='result/dir/a_result.json',
+            file_size='1',
+            download_token='test_token_14',
+            job_id='id'
+        ),
     ])
 
 

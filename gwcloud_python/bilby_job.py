@@ -29,7 +29,8 @@ class BilbyJob:
     user : str
         User that ran the job
     event_id : dict
-        Event ID associated with job, should have keys corresponding to an ~gwcloud_python.event_id.EventID object
+        Event ID associated with job, should have keys corresponding to an
+        :class:`~.EventID` object
     job_status : dict
         Status of job, should have 'name' and 'date' keys corresponding to the status code and when it was produced
     kwargs : dict, optional
@@ -67,42 +68,6 @@ class BilbyJob:
         """
         result, self.is_uploaded_job = self.client._get_files_by_job_id(self.job_id)
         return result
-
-    def get_files_by_reference(self, file_references):
-        """Obtain the data for a FileReferenceList
-
-        Parameters
-        ----------
-        file_references : .FileReferenceList
-            Contains FileReference instances for each of the files to be downloaded
-
-        Returns
-        -------
-        list
-            List of tuples with the file path and downloaded file contents as a byte string
-        """
-        return self.client._get_files_by_reference(self.job_id, file_references, self.is_uploaded_job)
-
-    def save_files_by_reference(self, file_references, root_path, preserve_directory_structure=True):
-        """Save the files represented in a FileReferenceList
-
-        Parameters
-        ----------
-        file_references : .FileReferenceList
-            Contains FileReference instances for each of the files to be downloaded and saved
-        root_path : str or ~pathlib.Path
-            Directory into which to save the files
-        preserve_directory_structure : bool, optional
-            Whether or not the files should retain the directory structure in which they are downloaded, by default True
-
-        Returns
-        -------
-        str
-            Success message
-        """
-        return self.client._save_files_by_reference(
-            self.job_id, file_references, root_path, preserve_directory_structure, self.is_uploaded_job
-        )
 
     @classmethod
     def register_file_list_filter(cls, name, file_list_filter_fn):
@@ -212,7 +177,7 @@ def _register_file_list_filter(name, file_list_filter_fn):
 
     def _get_files(self):
         file_list = _get_file_list_subset(self)
-        return self.get_files_by_reference(file_list)
+        return self.client.get_files_by_reference(file_list)
 
     files_fn_name = f'get_{name}_files'
     files_fn = _get_files
@@ -231,7 +196,7 @@ def _register_file_list_filter(name, file_list_filter_fn):
 
     def _save_files(self, root_path, preserve_directory_structure=True):
         file_list = _get_file_list_subset(self)
-        return self.save_files_by_reference(file_list, root_path, preserve_directory_structure)
+        return self.client.save_files_by_reference(file_list, root_path, preserve_directory_structure)
 
     save_fn_name = f'save_{name}_files'
     save_fn = _save_files
