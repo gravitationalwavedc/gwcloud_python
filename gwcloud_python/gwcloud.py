@@ -333,14 +333,12 @@ class GWCloud:
         return file_list, is_uploaded_job
 
     def get_files_by_reference(self, file_references):
-        """Obtains file data when provided a job ID and a FileReferenceList
+        """Obtains file data when provided a FileReferenceList
 
         Parameters
         ----------
-        job_id : str
-            Job ID
         file_references : FileReferenceList
-            Contains the FileReferences objects for which to download the contents
+            Contains the :class:`FileReference` objects for which to download the contents
 
         Returns
         -------
@@ -369,14 +367,12 @@ class GWCloud:
         return files
 
     def save_files_by_reference(self, file_references, root_path, preserve_directory_structure=True):
-        """Save files when provided a job ID and a FileReferenceList
+        """Save files when provided a FileReferenceList and a root path
 
         Parameters
         ----------
-        job_id : str
-            Job ID
         file_references : FileReferenceList
-            Contains the FileReference objects for which to save the associated files
+            Contains the :class:`FileReference` objects for which to save the associated files
         root_path : str or ~pathlib.Path
             Directory into which to save the files
         preserve_directory_structure : bool, optional

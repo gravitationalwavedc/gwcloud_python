@@ -1,30 +1,8 @@
-Working with BilbyJobs and FileReferences
-=========================================
+Working with FileReferences and FileReferenceLists
+==================================================
 
 A completed Bilby job will have a list of files associated with it.
 With an instance of the :class:`.BilbyJob` class, we are able to obtain the result files stored in the database.
-
-.. _status-label:
-
-Monitoring job status
----------------------
-
-While :class:`.BilbyJob` instances only show the job name and ID when printed, they store more useful attributes, such as the description, the job status and others.
-To observe the status of a job, we can just print the :attr:`.BilbyJob.status` attribute. This attribute stores a dictionary containing the status name and the date when this status began.
-For example, if we run:
-
-::
-    
-    job = gwc.get_preferred_job_list()[0]
-    print(job.status)
-
-we are shown that the job has been completed, and hence will have an associated list of result files:
-
-::
-
-    {'name': 'Completed', 'date': '2021-05-31T03:16:36+00:00'}
-
-
 
 Obtaining a job file list
 -------------------------
@@ -113,9 +91,12 @@ This returns a new :class:`.FileReferenceList` with contents like:
     FileReference(path=PosixPath('result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_par3_result.json'))
     FileReference(path=PosixPath('result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_par4_result.json'))
 
-We are able to save or obtain the files for this custom :class:`.FileReferenceList` using the :meth:`~.BilbyJob.save_files_by_reference` and :meth:`~.BilbyJob.get_files_by_reference` methods.
+We are able to save or obtain the files for this custom :class:`.FileReferenceList` using the :meth:`~.GWCloud.save_files_by_reference` and :meth:`~.GWCloud.get_files_by_reference` methods.
 For example, to save the above :code:`result_json_files`, we run:
 
 ::
 
-    job.save_files_by_reference(result_json_files, 'directory/to/store/files')
+    gwc.save_files_by_reference(result_json_files, 'directory/to/store/files')
+
+Note that a :class:`.FileReferenceList` object can contain references to files from many different Bilby Jobs.
+The :meth:`~.GWCloud.save_files_by_reference` and :meth:`~.GWCloud.get_files_by_reference` methods are able to handle such cases.

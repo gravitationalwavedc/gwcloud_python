@@ -29,7 +29,8 @@ class BilbyJob:
     user : str
         User that ran the job
     event_id : dict
-        Event ID associated with job, should have keys corresponding to an ~gwcloud_python.event_id.EventID object
+        Event ID associated with job, should have keys corresponding to an
+        :class:`~.EventID` object
     job_status : dict
         Status of job, should have 'name' and 'date' keys corresponding to the status code and when it was produced
     kwargs : dict, optional

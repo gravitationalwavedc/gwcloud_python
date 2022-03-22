@@ -59,3 +59,35 @@ For example, if we wish to send our job to the Caltech cluster, we can run:
 
 The Cluster enum is provided as a utility to help avoid mistakes, though the string "cit" would still be accepted.
 For the list of available clusters, we can check the :class:`.Cluster` class.
+
+.. _status-label:
+
+Monitoring job status
+---------------------
+
+While :class:`.BilbyJob` instances only show the job name and ID when printed, they store more useful attributes, such as the description, the job status and others.
+To observe the status of a job, we can just print the :attr:`.BilbyJob.status` attribute. This attribute stores a dictionary containing the status name and the date when this status began.
+For example, if we run:
+
+::
+    
+    print(job.status)
+
+we are shown that the job has been completed, and hence will have an associated list of result files:
+
+::
+
+    {'name': 'Completed', 'date': '2021-05-31T03:16:36+00:00'}
+
+
+Modifying job properties
+------------------------
+
+After a job has been submitted, we are able to still modify some of its properties in the GWCloud service.
+For example, we can use the :meth:`.BilbyJob.set_name` method to change the name of the job:
+
+::
+
+    job.set_name(name='modified_job_name')
+
+Likewise, we are able to change the job description and event ID using :meth:`.BilbyJob.set_description` and :meth:`.BilbyJob.set_event_id`, respectively.

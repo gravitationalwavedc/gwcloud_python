@@ -21,7 +21,7 @@ class FileReference:
 
 class FileReferenceList(UserList):
     """Used to store FileReference objects and provide simple methods with which to obtain their data.
-    As a subclass of ~collections.UserList, this class contains the same functionality as a regular list.
+    As a subclass of :class:`collections.UserList`, this class contains the same functionality as a regular list.
     It also contains several other useful methods.
 
     Parameters
