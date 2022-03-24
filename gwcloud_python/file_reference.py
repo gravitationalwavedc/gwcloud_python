@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from collections import UserList
+from collections import UserList, OrderedDict
 from pathlib import Path
 from .utils import remove_path_anchor, file_filters
 
@@ -120,6 +120,16 @@ class FileReferenceList(UserList):
         """
         return [ref.path for ref in self.data]
 
+    def get_uploaded(self):
+        """Get whether the files are from an uploaded job in a list
+
+        Returns
+        -------
+        list
+            List of True for uploaded jobs, False for submitted jobs
+        """
+        return [ref.is_uploaded_job for ref in self.data]
+
     def get_output_paths(self, root_path, preserve_directory_structure=True):
         """Get all the file paths modified to give them a base directory.
         Can also optionally remove any existing directory structure
@@ -145,13 +155,10 @@ class FileReferenceList(UserList):
         return paths
 
     def _batch_by_job_id(self):
-        batched = {}
+        batched = OrderedDict()
         for ref in self.data:
-            job_dict = batched.get(ref.job_id, {})
-            files = job_dict.get('files', FileReferenceList())
-            files.append(ref)
-            job_dict['files'] = files
-            job_dict['is_uploaded_job'] = ref.is_uploaded_job
-            batched[ref.job_id] = job_dict
+            job_files = batched.get(ref.job_id, FileReferenceList())
+            job_files.append(ref)
+            batched[ref.job_id] = job_files
 
         return batched
