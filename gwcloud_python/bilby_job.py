@@ -42,6 +42,7 @@ class BilbyJob:
         'config': file_filters.config_filter,
         'png': file_filters.png_filter,
         'corner_plot': file_filters.corner_plot_filter,
+        'result_json': file_filters.result_json_filter
     }
 
     def __init__(self, client, job_id, name, description, user, event_id, job_status, **kwargs):

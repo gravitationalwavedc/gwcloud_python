@@ -189,11 +189,15 @@ def test_files():
 def setup_mock_download_fns(mocker, mock_gwdc_init, test_files):
     mock_files = mocker.Mock(return_value=[(f.path, TemporaryFile()) for f in test_files])
 
+    def get_mock_ids(job_id, tokens):
+        return [f'{job_id}{i}' for i, _ in enumerate(tokens)]
+
+    mock_ids = mocker.Mock(side_effect=get_mock_ids)
     return (
         mocker.patch('gwcloud_python.gwcloud._download_files', mock_files),
         mocker.patch('gwcloud_python.gwcloud._get_file_map_fn'),
         mocker.patch('gwcloud_python.gwcloud._save_file_map_fn'),
-        mocker.patch('gwcloud_python.gwcloud.GWCloud._get_download_ids_from_tokens')
+        mocker.patch('gwcloud_python.gwcloud.GWCloud._get_download_ids_from_tokens', mock_ids)
     )
 
 
@@ -268,82 +272,52 @@ def test_gwcloud_files_by_job_id(job_file_request):
         )
 
 
-def test_gwcloud_get_batched_files(setup_mock_download_fns, test_files):
+def test_gwcloud_get_files_by_reference(setup_mock_download_fns, mocker, test_files):
     gwc = GWCloud(token='my_token')
     mock_download_files = setup_mock_download_fns[0]
     mock_get_fn = setup_mock_download_fns[1]
-    mock_ids = setup_mock_download_fns[3].return_value
+    mock_get_ids = setup_mock_download_fns[3]
+    mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22']
 
-    test_files_subset = test_files[0:3]
+    files = gwc.get_files_by_reference(test_files)
 
-    files = gwc._get_batched_files('id1', test_files_subset, is_uploaded_job=False)
+    mock_calls = [
+        mocker.call(job_id, job_files.get_tokens())
+        for job_id, job_files in test_files._batch_by_job_id().items()
+    ]
+
+    mock_get_ids.assert_has_calls(mock_calls)
 
     assert [f[0] for f in files] == test_files.get_paths()
     mock_download_files.assert_called_once_with(
         mock_get_fn,
         mock_ids,
-        test_files_subset.get_paths(),
-        test_files_subset.get_total_bytes(),
-        False
+        test_files.get_paths(),
+        test_files.get_uploaded(),
+        test_files.get_total_bytes()
     )
 
 
-def test_gwcloud_save_batched_files(setup_mock_download_fns, test_files):
+def test_gwcloud_save_batched_files(setup_mock_download_fns, mocker, test_files):
     gwc = GWCloud(token='my_token')
     mock_download_files = setup_mock_download_fns[0]
     mock_save_fn = setup_mock_download_fns[2]
-    mock_ids = setup_mock_download_fns[3].return_value
+    mock_get_ids = setup_mock_download_fns[3]
+    mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22']
 
-    test_files_subset = test_files[0:3]
+    gwc.save_files_by_reference(test_files, 'test_dir', preserve_directory_structure=True)
 
-    gwc._save_batched_files(
-        'id1',
-        test_files_subset,
-        'test_dir',
-        preserve_directory_structure=True,
-        is_uploaded_job=False
-    )
+    mock_calls = [
+        mocker.call(job_id, job_files.get_tokens())
+        for job_id, job_files in test_files._batch_by_job_id().items()
+    ]
+
+    mock_get_ids.assert_has_calls(mock_calls)
 
     mock_download_files.assert_called_once_with(
         mock_save_fn,
         mock_ids,
-        test_files_subset.get_output_paths('test_dir', preserve_directory_structure=True),
-        test_files_subset.get_total_bytes(),
-        False
+        test_files.get_output_paths('test_dir', preserve_directory_structure=True),
+        test_files.get_uploaded(),
+        test_files.get_total_bytes()
     )
-
-
-def test_gwcloud_get_files_by_reference(mock_gwdc_init, mocker, test_files):
-    mock_fn = mocker.patch('gwcloud_python.gwcloud.GWCloud._get_batched_files')
-    gwc = GWCloud(token='my_token')
-
-    gwc.get_files_by_reference(test_files)
-
-    batched_files = test_files._batch_by_job_id()
-    mock_calls = [
-        mocker.call(job_id=job_id, file_references=job_dict['files'], is_uploaded_job=job_dict['is_uploaded_job'])
-        for job_id, job_dict in batched_files.items()
-    ]
-
-    mock_fn.assert_has_calls(mock_calls)
-
-
-def test_gwcloud_save_files_by_reference(mock_gwdc_init, mocker, test_files):
-    mock_fn = mocker.patch('gwcloud_python.gwcloud.GWCloud._save_batched_files')
-    gwc = GWCloud(token='my_token')
-
-    gwc.save_files_by_reference(test_files, root_path='test_dir', preserve_directory_structure=True)
-
-    batched_files = test_files._batch_by_job_id()
-    mock_calls = [
-        mocker.call(
-            job_id=job_id,
-            file_references=job_dict['files'],
-            root_path='test_dir',
-            preserve_directory_structure=True,
-            is_uploaded_job=job_dict['is_uploaded_job']
-        )
-        for job_id, job_dict in batched_files.items()
-    ]
-
-    mock_fn.assert_has_calls(mock_calls)

@@ -2,6 +2,7 @@ import logging
 import tarfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+import itertools
 
 from gwdc_python import GWDC
 
@@ -345,23 +346,22 @@ class GWCloud:
         list
             List of tuples containing the file path and file contents as a byte string
         """
-        files = []
-        batched_files = file_references._batch_by_job_id()
-        for job_id, job_dict in batched_files.items():
-            files.append(
-                self._get_batched_files(
-                    job_id=job_id,
-                    file_references=job_dict['files'],
-                    is_uploaded_job=job_dict['is_uploaded_job'])
-            )
-        return files
+        batched = file_references._batch_by_job_id()
 
-    def _get_batched_files(self, job_id, file_references, is_uploaded_job=False):
-        file_ids = self._get_download_ids_from_tokens(job_id, file_references.get_tokens())
-        file_paths = file_references.get_paths()
-        total_size = file_references.get_total_bytes()
+        file_ids = [
+            self._get_download_ids_from_tokens(job_id, job_files.get_tokens())
+            for job_id, job_files in batched.items()
+        ]
 
-        files = _download_files(_get_file_map_fn, file_ids, file_paths, total_size, is_uploaded_job)
+        file_ids = list(itertools.chain.from_iterable(file_ids))
+        batched_files = FileReferenceList(itertools.chain.from_iterable(batched.values()))
+
+        file_paths = batched_files.get_paths()
+        file_uploaded = batched_files.get_uploaded()
+        total_size = batched_files.get_total_bytes()
+
+        files = _download_files(_get_file_map_fn, file_ids, file_paths, file_uploaded, total_size)
+
         logger.info(f'All {len(file_ids)} files downloaded!')
 
         return files
@@ -377,28 +377,22 @@ class GWCloud:
             Directory into which to save the files
         preserve_directory_structure : bool, optional
             Remove any directory structure for the downloaded files, by default True
-
-        Returns
-        -------
-        str
-            Success message
         """
-        batched_files = file_references._batch_by_job_id()
-        for job_id, job_dict in batched_files.items():
-            self._save_batched_files(
-                job_id=job_id,
-                file_references=job_dict['files'],
-                root_path=root_path,
-                preserve_directory_structure=preserve_directory_structure,
-                is_uploaded_job=job_dict['is_uploaded_job'])
+        batched = file_references._batch_by_job_id()
 
-    def _save_batched_files(self, job_id, file_references, root_path, preserve_directory_structure=True,
-                            is_uploaded_job=False):
-        file_ids = self._get_download_ids_from_tokens(job_id, file_references.get_tokens())
-        file_paths = file_references.get_output_paths(root_path, preserve_directory_structure)
-        total_size = file_references.get_total_bytes()
+        file_ids = [
+            self._get_download_ids_from_tokens(job_id, job_files.get_tokens())
+            for job_id, job_files in batched.items()
+        ]
 
-        _download_files(_save_file_map_fn, file_ids, file_paths, total_size, is_uploaded_job)
+        file_ids = list(itertools.chain.from_iterable(file_ids))
+        batched_files = FileReferenceList(itertools.chain.from_iterable(batched.values()))
+
+        file_paths = batched_files.get_output_paths(root_path, preserve_directory_structure)
+        file_uploaded = batched_files.get_uploaded()
+        total_size = batched_files.get_total_bytes()
+
+        _download_files(_save_file_map_fn, file_ids, file_paths, file_uploaded, total_size)
 
         logger.info(f'All {len(file_ids)} files saved!')
 

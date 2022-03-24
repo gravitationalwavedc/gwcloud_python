@@ -1,6 +1,7 @@
-from gwcloud_python import FileReference, FileReferenceList
 import pytest
 from pathlib import Path
+from collections import OrderedDict
+from gwcloud_python import FileReference, FileReferenceList
 from gwcloud_python.utils import remove_path_anchor
 
 
@@ -76,6 +77,7 @@ def test_file_reference_list(setup_dicts):
     assert file_reference_list.get_total_bytes() == sum([ref.file_size for ref in file_references])
     assert file_reference_list.get_tokens() == [ref.download_token for ref in file_references]
     assert file_reference_list.get_paths() == [ref.path for ref in file_references]
+    assert file_reference_list.get_uploaded() == [ref.is_uploaded_job for ref in file_references]
 
 
 def test_file_reference_list_output_paths(setup_dicts):
@@ -105,19 +107,10 @@ def test_file_reference_list_output_paths(setup_dicts):
 def test_batch_file_reference_list(setup_dicts):
     file_reference_list = FileReferenceList([FileReference(**file_dict) for file_dict in setup_dicts])
 
-    batched = {
-        'id1': {
-            'files': file_reference_list[0:2],
-            'is_uploaded_job': False
-        },
-        'id2': {
-            'files': file_reference_list[2:4],
-            'is_uploaded_job': True
-        },
-        'id3': {
-            'files': file_reference_list[4:6],
-            'is_uploaded_job': False
-        },
-    }
+    batched = OrderedDict(
+        id1=file_reference_list[0:2],
+        id2=file_reference_list[2:4],
+        id3=file_reference_list[4:6],
+    )
 
     assert file_reference_list._batch_by_job_id() == batched

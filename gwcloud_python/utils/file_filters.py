@@ -120,6 +120,32 @@ def corner_plot_filter(file_list):
     return _filter_file_list(identifiers.corner_plot_file, file_list)
 
 
+def result_json_filter(file_list):
+    """Takes an input file list and returns a subset of that file list containing:
+
+    - Any file in the 'result' directory ending in '_merge_result.json'
+    - Or, any file in the 'result' directory ending in '_result.json'
+
+    Parameters
+    ----------
+    file_list : .FileReferenceList
+        A list of FileReference objects which will be filtered
+
+    Returns
+    -------
+    .FileReferenceList
+        Subset of the input FileReferenceList containing only the paths that match the merged json file criteria
+    """
+    # Get merged json file in result dir
+    result_json_file_list = _filter_file_list(identifiers.result_merged_json_file, file_list)
+
+    # If merged json doesn't exist, get result json file in result dir
+    if not result_json_file_list:
+        result_json_file_list = _filter_file_list(identifiers.result_json_file, file_list)
+
+    return result_json_file_list
+
+
 def custom_path_filter(file_list, directory=None, name=None, extension=None):
     """Takes an input file list and returns a subset of that file list containing:
 
