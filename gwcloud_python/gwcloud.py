@@ -1,24 +1,19 @@
-import concurrent.futures
 import logging
 import os
 import tarfile
-from functools import partial
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+import itertools
 
-import requests
 from gwdc_python import GWDC
-from tqdm import tqdm
 
 from .bilby_job import BilbyJob
 from .event_id import EventID
 from .file_reference import FileReference, FileReferenceList
 from .helpers import TimeRange, Cluster
 from .utils import convert_dict_keys
-
-GWCLOUD_ENDPOINT = 'https://gwcloud.org.au/bilby/graphql'
-GWCLOUD_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/job/apiv1/file/?fileId='
-GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT = 'https://gwcloud.org.au/bilby/file_download/?fileId='
+from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
+from .settings import GWCLOUD_ENDPOINT
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -211,9 +206,7 @@ class GWCloud:
             client=self,
             **convert_dict_keys(
                 query_data,
-                [
-                    ('id', 'job_id'),
-                ]
+                {'id': 'job_id'}
             )
         )
 
@@ -247,6 +240,12 @@ class GWCloud:
                             jobStatus {
                                 name
                                 date
+                            }
+                            eventId {
+                                eventId
+                                triggerId
+                                nickname
+                                isLigoEvent
                             }
                         }
                     }
@@ -286,7 +285,7 @@ class GWCloud:
                 bilbyJob (id: $id) {
                     id
                     name
-                    userId
+                    user
                     description
                     jobStatus {
                         name
@@ -335,7 +334,7 @@ class GWCloud:
                         node {
                             id
                             name
-                            userId
+                            user
                             description
                             jobStatus {
                                 name
@@ -380,117 +379,86 @@ class GWCloud:
             "jobId": job_id
         }
 
-        data = self.request(query=query, variables=variables)
+        data = convert_dict_keys(self.request(query=query, variables=variables))
+        is_uploaded_job = data['bilby_result_files']['is_uploaded_job']
 
         file_list = FileReferenceList()
-        for f in data['bilbyResultFiles']['files']:
-            if f['isDir']:
+        for file_data in data['bilby_result_files']['files']:
+            if file_data['is_dir']:
                 continue
-            f.pop('isDir')
-            file_list.append(FileReference(**convert_dict_keys(f)))
+            file_data.pop('is_dir')
+            file_list.append(
+                FileReference(
+                    **file_data,
+                    job_id=job_id,
+                    is_uploaded_job=data['bilby_result_files']['is_uploaded_job']
+                )
+            )
 
-        return file_list, data['bilbyResultFiles']['isUploadedJob']
+        return file_list, is_uploaded_job
 
-    def _get_file_map_fn(self, file_id, file_path, progress_bar, is_uploaded_job=False):
-        endpoint = GWCLOUD_FILE_DOWNLOAD_ENDPOINT \
-            if not is_uploaded_job else \
-            GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
-
-        download_url = endpoint + str(file_id)
-        content = b''
-        with requests.get(download_url, stream=True) as request:
-            for chunk in request.iter_content(chunk_size=1024 * 16, decode_unicode=True):
-                progress_bar.update(len(chunk))
-                content += chunk
-        return (file_path, content)
-
-    def _get_files_by_reference(self, job_id, file_references, is_uploaded_job=False):
-        """Obtains file data when provided a job ID and a FileReferenceList
+    def get_files_by_reference(self, file_references):
+        """Obtains file data when provided a FileReferenceList
 
         Parameters
         ----------
-        job_id : str
-            Job ID
         file_references : FileReferenceList
-            Contains the FileReferences objects for which to download the contents
+            Contains the :class:`FileReference` objects for which to download the contents
 
         Returns
         -------
         list
             List of tuples containing the file path and file contents as a byte string
         """
-        file_ids = self._get_download_ids_from_tokens(job_id, file_references.get_tokens())
-        file_paths = file_references.get_paths()
+        batched = file_references._batch_by_job_id()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            progress = tqdm(total=file_references.get_total_bytes(), leave=True, unit='B', unit_scale=True)
-            files = list(
-                executor.map(
-                    partial(
-                        self._get_file_map_fn,
-                        progress_bar=progress,
-                        is_uploaded_job=is_uploaded_job
-                    ), file_ids, file_paths
-                )
-            )
-            progress.close()
-            logger.info(f'All {len(file_ids)} files downloaded!')
+        file_ids = [
+            self._get_download_ids_from_tokens(job_id, job_files.get_tokens())
+            for job_id, job_files in batched.items()
+        ]
+
+        file_ids = list(itertools.chain.from_iterable(file_ids))
+        batched_files = FileReferenceList(itertools.chain.from_iterable(batched.values()))
+
+        file_paths = batched_files.get_paths()
+        file_uploaded = batched_files.get_uploaded()
+        total_size = batched_files.get_total_bytes()
+
+        files = _download_files(_get_file_map_fn, file_ids, file_paths, file_uploaded, total_size)
+
+        logger.info(f'All {len(file_ids)} files downloaded!')
 
         return files
 
-    def _save_file_map_fn(self, file_id, file_path, progress_bar, is_uploaded_job=False):
-        endpoint = GWCLOUD_FILE_DOWNLOAD_ENDPOINT \
-            if not is_uploaded_job else \
-            GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
-
-        download_url = endpoint + str(file_id)
-        file_path.parents[0].mkdir(parents=True, exist_ok=True)
-
-        with requests.get(download_url, stream=True) as request:
-            with file_path.open("wb+") as f:
-                for chunk in request.iter_content(chunk_size=1024 * 16):
-                    progress_bar.update(len(chunk))
-                    f.write(chunk)
-
-    def _save_files_by_reference(self, job_id, file_references, root_path, preserve_directory_structure=True,
-                                 is_uploaded_job=False):
-        """Save files when provided a job ID and a FileReferenceList
+    def save_files_by_reference(self, file_references, root_path, preserve_directory_structure=True):
+        """Save files when provided a FileReferenceList and a root path
 
         Parameters
         ----------
-        job_id : str
-            Job ID
         file_references : FileReferenceList
-            Contains the FileReference objects for which to save the associated files
+            Contains the :class:`FileReference` objects for which to save the associated files
         root_path : str or ~pathlib.Path
             Directory into which to save the files
         preserve_directory_structure : bool, optional
             Remove any directory structure for the downloaded files, by default True
-
-        Returns
-        -------
-        str
-            Success message
         """
-        file_ids = self._get_download_ids_from_tokens(job_id, file_references.get_tokens())
-        file_paths = file_references.get_output_paths(root_path, preserve_directory_structure)
+        batched = file_references._batch_by_job_id()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            progress = tqdm(total=file_references.get_total_bytes(), leave=True, unit='B', unit_scale=True)
-            list(
-                executor.map(
-                    partial(
-                        self._save_file_map_fn,
-                        progress_bar=progress,
-                        is_uploaded_job=is_uploaded_job
-                    ),
-                    file_ids, file_paths
-                )
-            )
-            progress.close()
-            logger.info(f'All {len(file_ids)} files saved!')
+        file_ids = [
+            self._get_download_ids_from_tokens(job_id, job_files.get_tokens())
+            for job_id, job_files in batched.items()
+        ]
 
-        return 'Success'
+        file_ids = list(itertools.chain.from_iterable(file_ids))
+        batched_files = FileReferenceList(itertools.chain.from_iterable(batched.values()))
+
+        file_paths = batched_files.get_output_paths(root_path, preserve_directory_structure)
+        file_uploaded = batched_files.get_uploaded()
+        total_size = batched_files.get_total_bytes()
+
+        _download_files(_save_file_map_fn, file_ids, file_paths, file_uploaded, total_size)
+
+        logger.info(f'All {len(file_ids)} files saved!')
 
     def _get_download_id_from_token(self, job_id, file_token):
         """Get a single file download id for a file download token

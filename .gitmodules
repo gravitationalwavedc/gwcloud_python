@@ -1,3 +1,0 @@
-[submodule "arcutils"]
-	path = arcutils
-	url = https://github.com/gravitationalwavedc/gw_arcanist_library.git

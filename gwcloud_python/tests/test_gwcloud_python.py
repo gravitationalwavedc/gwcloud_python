@@ -1,18 +1,21 @@
-from gwcloud_python import GWCloud, FileReference, JobStatus
+from gwcloud_python import GWCloud, FileReference, FileReferenceList, JobStatus, EventID
 from gwcloud_python.utils import convert_dict_keys
 import pytest
+from tempfile import TemporaryFile
 
 
 @pytest.fixture
-def setup_mock_gwdc(mocker):
+def mock_gwdc_init(mocker):
+    def mock_init(self, token, endpoint):
+        pass
+
+    mocker.patch('gwdc_python.gwdc.GWDC.__init__', mock_init)
+
+
+@pytest.fixture
+def setup_mock_gwdc(mocker, mock_gwdc_init):
     def mock_gwdc(request_data):
-        def mock_init(self, token, endpoint):
-            pass
-
-        def mock_request(self, query, variables=None, headers=None):
-            return request_data
-
-        mocker.patch('gwdc_python.gwdc.GWDC.__init__', mock_init)
+        mock_request = mocker.Mock(return_value=request_data)
         mocker.patch('gwdc_python.gwdc.GWDC.request', mock_request)
 
     return mock_gwdc
@@ -24,7 +27,10 @@ def single_job_request(setup_mock_gwdc):
         "id": 1,
         "name": "test_name",
         "description": "test description",
-        "userId": 1,
+        "user": "Test User1",
+        "eventId": {
+            "eventId": "GW123456"
+        },
         "jobStatus": {
             "name": "Completed",
             "date": "2021-12-02"
@@ -41,7 +47,10 @@ def multi_job_request(setup_mock_gwdc):
             "id": 1,
             "name": "test_name_1",
             "description": "test description 1",
-            "userId": 1,
+            "user": "Test User1",
+            "eventId": {
+                "eventId": "GW123456"
+            },
             "jobStatus": {
                 "name": "Completed",
                 "date": "2021-01-01"
@@ -52,7 +61,10 @@ def multi_job_request(setup_mock_gwdc):
             "id": 2,
             "name": "test_name_2",
             "description": "test description 2",
-            "userId": 2,
+            "user": "Test User2",
+            "eventId": {
+                "eventId": "GW123456"
+            },
             "jobStatus": {
                 "name": "Completed",
                 "date": "2021-02-02"
@@ -63,7 +75,10 @@ def multi_job_request(setup_mock_gwdc):
             "id": 3,
             "name": "test_name_3",
             "description": "test description 3",
-            "userId": 3,
+            "user": "Test User3",
+            "eventId": {
+                "eventId": "GW123456"
+            },
             "jobStatus": {
                 "name": "Error",
                 "date": "2021-03-03"
@@ -123,6 +138,70 @@ def job_file_request(setup_mock_gwdc):
 
 
 @pytest.fixture
+def test_files():
+    return FileReferenceList([
+        FileReference(
+            path='test/path_1.png',
+            file_size=1,
+            download_token='test_token_1',
+            job_id='id1',
+            is_uploaded_job=False
+        ),
+        FileReference(
+            path='test/path_2.png',
+            file_size=1,
+            download_token='test_token_2',
+            job_id='id1',
+            is_uploaded_job=False
+        ),
+        FileReference(
+            path='test/path_3.png',
+            file_size=1,
+            download_token='test_token_3',
+            job_id='id1',
+            is_uploaded_job=False
+        ),
+        FileReference(
+            path='test/path_4.png',
+            file_size=1,
+            download_token='test_token_4',
+            job_id='id2',
+            is_uploaded_job=True
+        ),
+        FileReference(
+            path='test/path_5.png',
+            file_size=1,
+            download_token='test_token_5',
+            job_id='id2',
+            is_uploaded_job=True
+        ),
+        FileReference(
+            path='test/path_6.png',
+            file_size=1,
+            download_token='test_token_6',
+            job_id='id2',
+            is_uploaded_job=True
+        ),
+    ])
+
+
+@pytest.fixture
+def setup_mock_download_fns(mocker, mock_gwdc_init, test_files):
+    mock_files = mocker.Mock(return_value=[(f.path, TemporaryFile()) for f in test_files])
+
+    def get_mock_ids(job_id, tokens):
+        return [f'{job_id}{i}' for i, _ in enumerate(tokens)]
+
+    mock_ids = mocker.Mock(side_effect=get_mock_ids)
+    return (
+        mocker.patch('gwcloud_python.gwcloud._download_files', mock_files),
+        mocker.patch('gwcloud_python.gwcloud._get_file_map_fn'),
+        mocker.patch('gwcloud_python.gwcloud._save_file_map_fn'),
+        mocker.patch('gwcloud_python.gwcloud.GWCloud._get_download_ids_from_tokens', mock_ids)
+    )
+
+
+@pytest.fixture
 def user_jobs(multi_job_request):
     return multi_job_request('bilbyJobs')
 
@@ -139,7 +218,8 @@ def test_get_job_by_id(single_job_request):
         status=single_job_request["jobStatus"]["name"],
         date=single_job_request["jobStatus"]["date"]
     )
-    assert job.other['user_id'] == single_job_request["userId"]
+    assert job.event_id == EventID(**convert_dict_keys(single_job_request["eventId"]))
+    assert job.user == single_job_request["user"]
 
 
 def test_get_user_jobs(user_jobs):
@@ -154,7 +234,8 @@ def test_get_user_jobs(user_jobs):
         status=user_jobs[0]["jobStatus"]["name"],
         date=user_jobs[0]["jobStatus"]["date"]
     )
-    assert jobs[0].other['user_id'] == user_jobs[0]["userId"]
+    assert jobs[0].event_id == EventID(**convert_dict_keys(user_jobs[0]["eventId"]))
+    assert jobs[0].user == user_jobs[0]["user"]
 
     assert jobs[1].job_id == user_jobs[1]["id"]
     assert jobs[1].name == user_jobs[1]["name"]
@@ -163,7 +244,8 @@ def test_get_user_jobs(user_jobs):
         status=user_jobs[1]["jobStatus"]["name"],
         date=user_jobs[1]["jobStatus"]["date"]
     )
-    assert jobs[1].other['user_id'] == user_jobs[1]["userId"]
+    assert jobs[1].event_id == EventID(**convert_dict_keys(user_jobs[1]["eventId"]))
+    assert jobs[1].user == user_jobs[1]["user"]
 
     assert jobs[2].job_id == user_jobs[2]["id"]
     assert jobs[2].name == user_jobs[2]["name"]
@@ -172,7 +254,8 @@ def test_get_user_jobs(user_jobs):
         status=user_jobs[2]["jobStatus"]["name"],
         date=user_jobs[2]["jobStatus"]["date"]
     )
-    assert jobs[2].other['user_id'] == user_jobs[2]["userId"]
+    assert jobs[2].event_id == EventID(**convert_dict_keys(user_jobs[2]["eventId"]))
+    assert jobs[2].user == user_jobs[2]["user"]
 
 
 def test_gwcloud_files_by_job_id(job_file_request):
@@ -181,4 +264,60 @@ def test_gwcloud_files_by_job_id(job_file_request):
     file_list, is_uploaded_job = gwc._get_files_by_job_id('arbitrary_job_id')
 
     for i, ref in enumerate(file_list):
-        assert ref == FileReference(**convert_dict_keys(job_file_request[i]))
+        job_file_request[i].pop('isDir')
+        assert ref == FileReference(
+            **convert_dict_keys(job_file_request[i]),
+            job_id='arbitrary_job_id',
+            is_uploaded_job=is_uploaded_job,
+        )
+
+
+def test_gwcloud_get_files_by_reference(setup_mock_download_fns, mocker, test_files):
+    gwc = GWCloud(token='my_token')
+    mock_download_files = setup_mock_download_fns[0]
+    mock_get_fn = setup_mock_download_fns[1]
+    mock_get_ids = setup_mock_download_fns[3]
+    mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22']
+
+    files = gwc.get_files_by_reference(test_files)
+
+    mock_calls = [
+        mocker.call(job_id, job_files.get_tokens())
+        for job_id, job_files in test_files._batch_by_job_id().items()
+    ]
+
+    mock_get_ids.assert_has_calls(mock_calls)
+
+    assert [f[0] for f in files] == test_files.get_paths()
+    mock_download_files.assert_called_once_with(
+        mock_get_fn,
+        mock_ids,
+        test_files.get_paths(),
+        test_files.get_uploaded(),
+        test_files.get_total_bytes()
+    )
+
+
+def test_gwcloud_save_batched_files(setup_mock_download_fns, mocker, test_files):
+    gwc = GWCloud(token='my_token')
+    mock_download_files = setup_mock_download_fns[0]
+    mock_save_fn = setup_mock_download_fns[2]
+    mock_get_ids = setup_mock_download_fns[3]
+    mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22']
+
+    gwc.save_files_by_reference(test_files, 'test_dir', preserve_directory_structure=True)
+
+    mock_calls = [
+        mocker.call(job_id, job_files.get_tokens())
+        for job_id, job_files in test_files._batch_by_job_id().items()
+    ]
+
+    mock_get_ids.assert_has_calls(mock_calls)
+
+    mock_download_files.assert_called_once_with(
+        mock_save_fn,
+        mock_ids,
+        test_files.get_output_paths('test_dir', preserve_directory_structure=True),
+        test_files.get_uploaded(),
+        test_files.get_total_bytes()
+    )

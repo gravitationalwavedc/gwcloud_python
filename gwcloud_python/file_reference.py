@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from collections import UserList
+from collections import UserList, OrderedDict
 from pathlib import Path
 from .utils import remove_path_anchor, file_filters
 
@@ -11,6 +11,8 @@ class FileReference:
     path: str
     file_size: int = field(repr=False)
     download_token: str = field(repr=False)
+    job_id: int = field(repr=False)
+    is_uploaded_job: bool = field(repr=False, default=False)
 
     def __post_init__(self):
         self.path = remove_path_anchor(Path(self.path))
@@ -19,7 +21,7 @@ class FileReference:
 
 class FileReferenceList(UserList):
     """Used to store FileReference objects and provide simple methods with which to obtain their data.
-    As a subclass of ~collections.UserList, this class contains the same functionality as a regular list.
+    As a subclass of :class:`collections.UserList`, this class contains the same functionality as a regular list.
     It also contains several other useful methods.
 
     Parameters
@@ -118,6 +120,16 @@ class FileReferenceList(UserList):
         """
         return [ref.path for ref in self.data]
 
+    def get_uploaded(self):
+        """Get whether the files are from an uploaded job in a list
+
+        Returns
+        -------
+        list
+            List of True for uploaded jobs, False for submitted jobs
+        """
+        return [ref.is_uploaded_job for ref in self.data]
+
     def get_output_paths(self, root_path, preserve_directory_structure=True):
         """Get all the file paths modified to give them a base directory.
         Can also optionally remove any existing directory structure
@@ -141,3 +153,12 @@ class FileReferenceList(UserList):
             else:
                 paths.append(root_path / Path(ref.path.name))
         return paths
+
+    def _batch_by_job_id(self):
+        batched = OrderedDict()
+        for ref in self.data:
+            job_files = batched.get(ref.job_id, FileReferenceList())
+            job_files.append(ref)
+            batched[ref.job_id] = job_files
+
+        return batched
