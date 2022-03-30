@@ -4,6 +4,7 @@ import tarfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 import itertools
+from contextlib import ExitStack
 
 from gwdc_python import GWDC
 
@@ -13,6 +14,7 @@ from .file_reference import FileReference, FileReferenceList
 from .helpers import TimeRange, Cluster
 from .utils import convert_dict_keys
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
+from .utils.file_upload import check_file
 from .settings import GWCLOUD_ENDPOINT
 
 logger = logging.getLogger(__name__)
@@ -43,48 +45,47 @@ class GWCloud:
         self.client = GWDC(token=token, endpoint=endpoint)
         self.request = self.client.request  # Setting shorthand for simplicity
 
-    def _upload_supporting_file(self, token, file_path):
+    def _upload_supporting_files(self, tokens, file_paths):
         """
-        Uploads a supporting file for a job
+        Uploads supporting files for a job
 
         Parameters
         ----------
-        token : str
-            The supporting file upload token
-        file_path : str
-            The local file path to the supporting file to be uploaded
+        token : list
+            List of supporting file upload tokens
+        file_path : list
+            List of local file paths to the supporting files to be uploaded
 
         Returns
         -------
         None
         """
         query = """
-            mutation SupportingFileUploadMutation($input: UploadSupportingFileMutationInput!) {
-                uploadSupportingFile(input: $input) {
+            mutation SupportingFilesUploadMutation($input: UploadSupportingFilesMutationInput!) {
+                uploadSupportingFiles(input: $input) {
                     result {
                         result
                     }
                 }
             }
         """
+        file_paths = map(check_file, file_paths)
+        with ExitStack() as stack:
+            files = [stack.enter_context(file_path.open('rb')) for file_path in file_paths]
 
-        file_path = Path(file_path)
-        if not file_path.is_file():
-            raise Exception(f"The supporting file \"{str(file_path)}\" does not exist.")
-
-        with file_path.open('rb') as f:
             variables = {
                 "input": {
-                    "fileToken": token,
-                    "supportingFile": f
+                    "supportingFiles": [
+                        {"fileToken": token, "supportingFile": f} for token, f in zip(tokens, files)
+                    ]
                 }
             }
 
             data = self.request(query=query, variables=variables, authorize=False)
 
-        result = data['uploadSupportingFile']['result']['result']
+        result = data['uploadSupportingFiles']['result']['result']
         if not result:
-            raise Exception("Unable to upload supporting file. An error occurred on the remote side.")
+            raise Exception("Unable to upload supporting files. An error occurred on the remote side.")
 
     def start_bilby_job_from_string(self, job_name, job_description, private, ini_string, cluster=Cluster.DEFAULT):
         """Submit the parameters required to start a Bilby job, using the contents of an .ini file
@@ -140,10 +141,12 @@ class GWCloud:
         data = self.request(query=query, variables=variables)
 
         # Upload any supporting files returned by the job submission
-        print(data)
-        supporting_files = data['newBilbyJobFromIniString']['result']['supportingFiles']
-        for supporting_file in supporting_files:
-            self._upload_supporting_file(supporting_file['token'], supporting_file['filePath'])
+        tokens, file_paths = [], []
+        for supporting_file in data['newBilbyJobFromIniString']['result']['supportingFiles']:
+            tokens.append(supporting_file['token'])
+            file_paths.append(supporting_file['filePath'])
+
+        self._upload_supporting_files(tokens, file_paths)
 
         job_id = data['newBilbyJobFromIniString']['result']['jobId']
         return self.get_job_by_id(job_id)
