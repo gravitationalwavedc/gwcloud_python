@@ -178,7 +178,6 @@ class GWCloud:
         cwd = Path().resolve()
         ini_file = Path(ini_file)
         try:
-            print(Path(ini_file).parent)
             os.chdir(Path(ini_file).parent)
             with ini_file.open() as f:
                 ini_string = f.read().strip()
