@@ -66,5 +66,6 @@ html_static_path = ['_static']
 
 # Allowing links to external docs
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None)
+    'python': ('https://docs.python.org/3', None),
+    'gwdc_python': ('https://gwdc-python.readthedocs.io/en/latest/', None)
 }

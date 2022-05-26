@@ -145,42 +145,42 @@ def test_files():
             file_size=1,
             download_token='test_token_1',
             job_id='id1',
-            is_uploaded_job=False
+            uploaded=False
         ),
         FileReference(
             path='test/path_2.png',
             file_size=1,
             download_token='test_token_2',
             job_id='id1',
-            is_uploaded_job=False
+            uploaded=False
         ),
         FileReference(
             path='test/path_3.png',
             file_size=1,
             download_token='test_token_3',
             job_id='id1',
-            is_uploaded_job=False
+            uploaded=False
         ),
         FileReference(
             path='test/path_4.png',
             file_size=1,
             download_token='test_token_4',
             job_id='id2',
-            is_uploaded_job=True
+            uploaded=True
         ),
         FileReference(
             path='test/path_5.png',
             file_size=1,
             download_token='test_token_5',
             job_id='id2',
-            is_uploaded_job=True
+            uploaded=True
         ),
         FileReference(
             path='test/path_6.png',
             file_size=1,
             download_token='test_token_6',
             job_id='id2',
-            is_uploaded_job=True
+            uploaded=True
         ),
     ])
 
@@ -261,14 +261,14 @@ def test_get_user_jobs(user_jobs):
 def test_gwcloud_files_by_job_id(job_file_request):
     gwc = GWCloud(token='my_token')
 
-    file_list, is_uploaded_job = gwc._get_files_by_job_id('arbitrary_job_id')
+    file_list, uploaded = gwc._get_files_by_job_id('arbitrary_job_id')
 
     for i, ref in enumerate(file_list):
         job_file_request[i].pop('isDir')
         assert ref == FileReference(
             **convert_dict_keys(job_file_request[i]),
             job_id='arbitrary_job_id',
-            is_uploaded_job=is_uploaded_job,
+            uploaded=uploaded,
         )
 
 
@@ -283,7 +283,7 @@ def test_gwcloud_get_files_by_reference(setup_mock_download_fns, mocker, test_fi
 
     mock_calls = [
         mocker.call(job_id, job_files.get_tokens())
-        for job_id, job_files in test_files._batch_by_job_id().items()
+        for job_id, job_files in test_files.batched.items()
     ]
 
     mock_get_ids.assert_has_calls(mock_calls)
@@ -309,7 +309,7 @@ def test_gwcloud_save_batched_files(setup_mock_download_fns, mocker, test_files)
 
     mock_calls = [
         mocker.call(job_id, job_files.get_tokens())
-        for job_id, job_files in test_files._batch_by_job_id().items()
+        for job_id, job_files in test_files.batched.items()
     ]
 
     mock_get_ids.assert_has_calls(mock_calls)
