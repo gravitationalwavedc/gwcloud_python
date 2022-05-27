@@ -1,21 +1,4 @@
-def _file_suffix(file_path, suffix):
-    return file_path.suffix == f'.{suffix}'
-
-
-def _file_base_dir(file_path, directory):
-    return file_path.parts[0] == directory
-
-
-def _file_dir(file_path, directory):
-    return directory in file_path.parts[:-1]
-
-
-def _file_name(file_path, name):
-    return name in file_path.name
-
-
-def _file_end(file_path, end):
-    return file_path.name.endswith(end)
+from gwdc_python.files.identifiers import match_file_suffix, match_file_base_dir, match_file_end
 
 
 def html_file(file_path):
@@ -31,7 +14,7 @@ def html_file(file_path):
     bool
         True if path points to a HTML file, False otherwise
     """
-    return _file_suffix(file_path, 'html')
+    return match_file_suffix(file_path, 'html')
 
 
 def png_file(file_path):
@@ -47,7 +30,7 @@ def png_file(file_path):
     bool
         True if path points to a PNG file, False otherwise
     """
-    return _file_suffix(file_path, 'png')
+    return match_file_suffix(file_path, 'png')
 
 
 def data_dir(file_path):
@@ -63,7 +46,7 @@ def data_dir(file_path):
     bool
         True if path starts with 'data' directory, False otherwise
     """
-    return _file_base_dir(file_path, 'data')
+    return match_file_base_dir(file_path, 'data')
 
 
 def result_dir(file_path):
@@ -79,7 +62,7 @@ def result_dir(file_path):
     bool
         True if path starts with 'result' directory, False otherwise
     """
-    return _file_base_dir(file_path, 'result')
+    return match_file_base_dir(file_path, 'result')
 
 
 def config_file(file_path):
@@ -95,7 +78,7 @@ def config_file(file_path):
     bool
         True if path points to config file, False otherwise
     """
-    return _file_end(file_path, '_config_complete.ini')
+    return match_file_end(file_path, '_config_complete.ini')
 
 
 def merged_json_file(file_path):
@@ -111,7 +94,7 @@ def merged_json_file(file_path):
     bool
         True if path points to merged JSON file, False otherwise
     """
-    return _file_end(file_path, '_merge_result.json')
+    return match_file_end(file_path, '_merge_result.json')
 
 
 def unmerged_json_file(file_path):
@@ -127,7 +110,7 @@ def unmerged_json_file(file_path):
     bool
         True if path points to JSON file, False otherwise
     """
-    return _file_end(file_path, '_result.json')
+    return match_file_end(file_path, '_result.json')
 
 
 def corner_plot_file(file_path):
@@ -143,7 +126,7 @@ def corner_plot_file(file_path):
     bool
         True if path points to corner plot file, False otherwise
     """
-    return _file_end(file_path, '_corner.png')
+    return match_file_end(file_path, '_corner.png')
 
 
 def data_png_file(file_path):

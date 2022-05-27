@@ -13,7 +13,7 @@ If we want to examine which files are associated with a Bilby job, we can obtain
 
     files = job.get_full_file_list()
 
-This will return a :class:`.FileReferenceList`, which contains FileReference instances for all files associated with the job:
+This will return a :class:`~gwdc_python.files.file_reference.FileReferenceList`, which contains FileReference instances for all files associated with the job:
 
 ::
 
@@ -71,7 +71,7 @@ which returns a list of all the contents of the config files available for downl
 Filtering files by path
 -----------------------
 
-If none of the provided methods return the desired subset of files, the full :class:`.FileReferenceList` can be filtered by using the more custom :meth:`~.FileReferenceList.filter_list_by_path` method.
+If none of the provided methods return the desired subset of files, the full :class:`~gwdc_python.files.file_reference.FileReferenceList` can be filtered by using the more custom :meth:`~.FileReferenceList.filter_list_by_path` method.
 This enables us to pick only the files we want based on the directories, the file name or the file extension.
 For example, if we want to find all JSON files in the 'result' directory, we can can run:
 
@@ -80,7 +80,7 @@ For example, if we want to find all JSON files in the 'result' directory, we can
     files = job.get_full_file_list()
     result_json_files = files.filter_list_by_path(directory='result', extension='json')
 
-This returns a new :class:`.FileReferenceList` with contents like:
+This returns a new :class:`~gwdc_python.files.file_reference.FileReferenceList` with contents like:
 
 ::
 
@@ -91,12 +91,12 @@ This returns a new :class:`.FileReferenceList` with contents like:
     FileReference(path=PosixPath('result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_par3_result.json'))
     FileReference(path=PosixPath('result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_par4_result.json'))
 
-We are able to save or obtain the files for this custom :class:`.FileReferenceList` using the :meth:`~.GWCloud.save_files_by_reference` and :meth:`~.GWCloud.get_files_by_reference` methods.
+We are able to save or obtain the files for this custom :class:`~gwdc_python.files.file_reference.FileReferenceList` using the :meth:`~.GWCloud.save_files_by_reference` and :meth:`~.GWCloud.get_files_by_reference` methods.
 For example, to save the above :code:`result_json_files`, we run:
 
 ::
 
     gwc.save_files_by_reference(result_json_files, 'directory/to/store/files')
 
-Note that a :class:`.FileReferenceList` object can contain references to files from many different Bilby Jobs.
+Note that a :class:`~gwdc_python.files.file_reference.FileReferenceList` object can contain references to files from many different Bilby Jobs.
 The :meth:`~.GWCloud.save_files_by_reference` and :meth:`~.GWCloud.get_files_by_reference` methods are able to handle such cases.

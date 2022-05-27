@@ -33,11 +33,9 @@ def setup_paths():
 
         'absolute_data_path': Path('/data/this/is/a/test'),
         'data_path': Path('data/this/is/a/test'),
-        'data_dir': Path('data/'),
 
         'absolute_result_path': Path('/result/this/is/a/test'),
         'result_path': Path('result/this/is/a/test'),
-        'result_dir': Path('result/'),
 
         'data_dir_png': Path('data/dir/test.png'),
         'data_png': Path('data.png'),
@@ -63,11 +61,11 @@ def setup_identifiers():
         ),
         (
             identifiers.data_dir,
-            ['data_path', 'data_dir', 'data_dir_png']
+            ['data_path', 'data_dir_png']
         ),
         (
             identifiers.result_dir,
-            ['result_path', 'result_dir', 'result_dir_png', 'result_merged_json', 'result_unmerged_json']
+            ['result_path', 'result_dir_png', 'result_merged_json', 'result_unmerged_json']
         ),
         (
             identifiers.config_file,
@@ -109,8 +107,8 @@ def check_identifier(setup_paths):
     def _check_identifier(identifier, true_path_keys):
         true_paths = [value for key, value in setup_paths.items() if key in true_path_keys]
         false_paths = [value for key, value in setup_paths.items() if key not in true_path_keys]
-
         for path in true_paths:
+            print(path)
             assert identifier(path) is True
 
         for path in false_paths:

@@ -197,24 +197,3 @@ def test_result_json_file_filter(full_with_merge, full_without_merge, merge, unm
     sub_list = file_filters.result_json_filter(full_without_merge)
     assert file_filters.sort_file_list(sub_list) != file_filters.sort_file_list(merge)
     assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(unmerge)
-
-
-def test_custom_path_file_filter(full_without_merge, merge, png_data, png_extra_dir, index):
-    # Test here is not exactly comprehensive, but it's good enough for now
-    full = full_without_merge + merge
-    sub_list = file_filters.custom_path_filter(full, directory='data')
-    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(png_data)
-    sub_list = file_filters.custom_path_filter(full, name='merge')
-    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(merge)
-    sub_list = file_filters.custom_path_filter(full, extension='html')
-    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(index)
-
-    sub_list = file_filters.custom_path_filter(full, directory='result', name='merge')
-    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(merge)
-    sub_list = file_filters.custom_path_filter(full, directory='arbitrary', extension='png')
-    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(png_extra_dir)
-    sub_list = file_filters.custom_path_filter(full, name='merge', extension='json')
-    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(merge)
-
-    sub_list = file_filters.custom_path_filter(full, directory='result', name='merge', extension='json')
-    assert file_filters.sort_file_list(sub_list) == file_filters.sort_file_list(merge)

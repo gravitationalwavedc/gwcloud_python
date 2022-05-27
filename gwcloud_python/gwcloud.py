@@ -7,10 +7,10 @@ import itertools
 from contextlib import ExitStack
 
 from gwdc_python import GWDC
+from gwdc_python.files import FileReference, FileReferenceList
 
 from .bilby_job import BilbyJob
 from .event_id import EventID
-from .file_reference import FileReference, FileReferenceList
 from .helpers import TimeRange, Cluster
 from .utils import convert_dict_keys
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
@@ -382,7 +382,7 @@ class GWCloud:
         }
 
         data = convert_dict_keys(self.request(query=query, variables=variables))
-        is_uploaded_job = data['bilby_result_files']['is_uploaded_job']
+        uploaded = data['bilby_result_files']['is_uploaded_job']
 
         file_list = FileReferenceList()
         for file_data in data['bilby_result_files']['files']:
@@ -393,11 +393,11 @@ class GWCloud:
                 FileReference(
                     **file_data,
                     job_id=job_id,
-                    is_uploaded_job=data['bilby_result_files']['is_uploaded_job']
+                    uploaded=uploaded
                 )
             )
 
-        return file_list, is_uploaded_job
+        return file_list, uploaded
 
     def get_files_by_reference(self, file_references):
         """Obtains file data when provided a FileReferenceList
@@ -412,7 +412,7 @@ class GWCloud:
         list
             List of tuples containing the file path and file contents as a byte string
         """
-        batched = file_references._batch_by_job_id()
+        batched = file_references.batched
 
         file_ids = [
             self._get_download_ids_from_tokens(job_id, job_files.get_tokens())
@@ -420,7 +420,7 @@ class GWCloud:
         ]
 
         file_ids = list(itertools.chain.from_iterable(file_ids))
-        batched_files = FileReferenceList(itertools.chain.from_iterable(batched.values()))
+        batched_files = FileReferenceList(list(itertools.chain.from_iterable(batched.values())))
 
         file_paths = batched_files.get_paths()
         file_uploaded = batched_files.get_uploaded()
@@ -444,7 +444,7 @@ class GWCloud:
         preserve_directory_structure : bool, optional
             Remove any directory structure for the downloaded files, by default True
         """
-        batched = file_references._batch_by_job_id()
+        batched = file_references.batched
 
         file_ids = [
             self._get_download_ids_from_tokens(job_id, job_files.get_tokens())
@@ -452,7 +452,7 @@ class GWCloud:
         ]
 
         file_ids = list(itertools.chain.from_iterable(file_ids))
-        batched_files = FileReferenceList(itertools.chain.from_iterable(batched.values()))
+        batched_files = FileReferenceList(list(itertools.chain.from_iterable(batched.values())))
 
         file_paths = batched_files.get_output_paths(root_path, preserve_directory_structure)
         file_uploaded = batched_files.get_uploaded()

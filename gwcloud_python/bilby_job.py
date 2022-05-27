@@ -64,7 +64,7 @@ class BilbyJob:
 
         Returns
         -------
-        .FileReferenceList
+        ~gwdc_python.files.file_reference.FileReferenceList
             Contains FileReference instances for each of the files associated with this job
         """
         result, self.is_uploaded_job = self.client._get_files_by_job_id(self.job_id)
@@ -171,7 +171,7 @@ def _register_file_list_filter(name, file_list_filter_fn):
 
         Returns
         -------
-        .FileReferenceList
+        ~gwdc_python.files.file_reference.FileReferenceList
             Contains FileReference instances holding information on the {spaced_name} files
     """
     setattr(BilbyJob, file_list_fn_name, file_list_fn)
