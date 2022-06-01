@@ -154,12 +154,12 @@ def mock_bilby_job(mocker):
 
 @pytest.fixture
 def mock_bilby_job_files(mock_bilby_job, full):
-    return mock_bilby_job({'_get_files_by_job_id': (full, {'bilbyResultFiles': {'isUploadedJob': False}})})
+    return mock_bilby_job({'_get_files_by_job_id': (full, {'bilby_result_files': {'is_uploaded_job': False}})})
 
 
 @pytest.fixture
 def mock_bilby_job_update(mock_bilby_job):
-    return mock_bilby_job({'request': {'updateBilbyJob': {'result': 'Success'}}})
+    return mock_bilby_job({'request': {'update_bilby_job': {'result': 'Success'}}})
 
 
 @pytest.fixture
@@ -182,6 +182,9 @@ def test_bilby_job_full_file_list(mock_bilby_job_files, full):
 
 def test_bilby_job_file_filters(mocker, mock_bilby_job_files, full, default, png, corner, config):
     bilby_job = mock_bilby_job_files
+    print(bilby_job.__dict__)
+    print(bilby_job.__dir__())
+
     assert file_filters.sort_file_list(bilby_job.get_default_file_list()) == file_filters.sort_file_list(default)
     assert file_filters.sort_file_list(bilby_job.get_png_file_list()) == file_filters.sort_file_list(png)
     assert file_filters.sort_file_list(bilby_job.get_corner_plot_file_list()) == file_filters.sort_file_list(corner)
@@ -219,7 +222,7 @@ def test_bilbyjob_set_name(mock_bilby_job_update, update_query):
         query=update_query,
         variables={
             'input': {
-                'jobId': bilby_job.job_id,
+                'job_id': bilby_job.job_id,
                 'name': 'ADifferentName'
             }
         }
@@ -236,7 +239,7 @@ def test_bilbyjob_set_description(mock_bilby_job_update, update_query):
         query=update_query,
         variables={
             'input': {
-                'jobId': bilby_job.job_id,
+                'job_id': bilby_job.job_id,
                 'description': 'A different description'
             }
         }
@@ -245,7 +248,7 @@ def test_bilbyjob_set_description(mock_bilby_job_update, update_query):
 
 def test_bilbyjob_set_event_id(mock_bilby_job, update_query):
     bilby_job = mock_bilby_job({
-        'request': {'updateBilbyJob': {'result': 'Success'}},
+        'request': {'update_bilby_job': {'result': 'Success'}},
         'get_event_id': EventID(event_id='GW111111')
     })
 
@@ -256,8 +259,8 @@ def test_bilbyjob_set_event_id(mock_bilby_job, update_query):
         query=update_query,
         variables={
             'input': {
-                'jobId': bilby_job.job_id,
-                'eventId': 'GW111111'
+                'job_id': bilby_job.job_id,
+                'event_id': 'GW111111'
             }
         }
     )

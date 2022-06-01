@@ -1,5 +1,4 @@
 from gwcloud_python import GWCloud, FileReference, FileReferenceList, JobStatus, EventID
-from gwcloud_python.utils import convert_dict_keys
 import pytest
 from tempfile import TemporaryFile
 
@@ -28,15 +27,15 @@ def single_job_request(setup_mock_gwdc):
         "name": "test_name",
         "description": "test description",
         "user": "Test User1",
-        "eventId": {
-            "eventId": "GW123456"
+        "event_id": {
+            "event_id": "GW123456"
         },
-        "jobStatus": {
+        "job_status": {
             "name": "Completed",
             "date": "2021-12-02"
         }
     }
-    setup_mock_gwdc({"bilbyJob": job_data})
+    setup_mock_gwdc({"bilby_job": job_data})
     return job_data
 
 
@@ -48,10 +47,10 @@ def multi_job_request(setup_mock_gwdc):
             "name": "test_name_1",
             "description": "test description 1",
             "user": "Test User1",
-            "eventId": {
-                "eventId": "GW123456"
+            "event_id": {
+                "event_id": "GW123456"
             },
-            "jobStatus": {
+            "job_status": {
                 "name": "Completed",
                 "date": "2021-01-01"
             }
@@ -62,10 +61,10 @@ def multi_job_request(setup_mock_gwdc):
             "name": "test_name_2",
             "description": "test description 2",
             "user": "Test User2",
-            "eventId": {
-                "eventId": "GW123456"
+            "event_id": {
+                "event_id": "GW123456"
             },
-            "jobStatus": {
+            "job_status": {
                 "name": "Completed",
                 "date": "2021-02-02"
             }
@@ -76,10 +75,10 @@ def multi_job_request(setup_mock_gwdc):
             "name": "test_name_3",
             "description": "test description 3",
             "user": "Test User3",
-            "eventId": {
-                "eventId": "GW123456"
+            "event_id": {
+                "event_id": "GW123456"
             },
-            "jobStatus": {
+            "job_status": {
                 "name": "Error",
                 "date": "2021-03-03"
             }
@@ -104,33 +103,33 @@ def multi_job_request(setup_mock_gwdc):
 def job_file_request(setup_mock_gwdc):
     job_file_data_1 = {
         "path": "path/to/test.png",
-        "fileSize": "1",
-        "downloadToken": "test_token_1",
-        "isDir": False
+        "file_size": "1",
+        "download_token": "test_token_1",
+        "is_dir": False
     }
 
     job_file_data_2 = {
         "path": "path/to/test.json",
-        "fileSize": "10",
-        "downloadToken": "test_token_2",
-        "isDir": False
+        "file_size": "10",
+        "download_token": "test_token_2",
+        "is_dir": False
     }
 
     job_file_data_3 = {
         "path": "path/to/test",
-        "fileSize": "100",
-        "downloadToken": "test_token_3",
-        "isDir": True
+        "file_size": "100",
+        "download_token": "test_token_3",
+        "is_dir": True
     }
 
     setup_mock_gwdc({
-        "bilbyResultFiles": {
+        "bilby_result_files": {
             "files": [
                 job_file_data_1,
                 job_file_data_2,
                 job_file_data_3
             ],
-            "isUploadedJob": False
+            "is_uploaded_job": False
         }
     })
 
@@ -203,7 +202,7 @@ def setup_mock_download_fns(mocker, mock_gwdc_init, test_files):
 
 @pytest.fixture
 def user_jobs(multi_job_request):
-    return multi_job_request('bilbyJobs')
+    return multi_job_request('bilby_jobs')
 
 
 def test_get_job_by_id(single_job_request):
@@ -215,10 +214,10 @@ def test_get_job_by_id(single_job_request):
     assert job.name == single_job_request["name"]
     assert job.description == single_job_request["description"]
     assert job.status == JobStatus(
-        status=single_job_request["jobStatus"]["name"],
-        date=single_job_request["jobStatus"]["date"]
+        status=single_job_request["job_status"]["name"],
+        date=single_job_request["job_status"]["date"]
     )
-    assert job.event_id == EventID(**convert_dict_keys(single_job_request["eventId"]))
+    assert job.event_id == EventID(**single_job_request["event_id"])
     assert job.user == single_job_request["user"]
 
 
@@ -231,30 +230,30 @@ def test_get_user_jobs(user_jobs):
     assert jobs[0].name == user_jobs[0]["name"]
     assert jobs[0].description == user_jobs[0]["description"]
     assert jobs[0].status == JobStatus(
-        status=user_jobs[0]["jobStatus"]["name"],
-        date=user_jobs[0]["jobStatus"]["date"]
+        status=user_jobs[0]["job_status"]["name"],
+        date=user_jobs[0]["job_status"]["date"]
     )
-    assert jobs[0].event_id == EventID(**convert_dict_keys(user_jobs[0]["eventId"]))
+    assert jobs[0].event_id == EventID(**user_jobs[0]["event_id"])
     assert jobs[0].user == user_jobs[0]["user"]
 
     assert jobs[1].job_id == user_jobs[1]["id"]
     assert jobs[1].name == user_jobs[1]["name"]
     assert jobs[1].description == user_jobs[1]["description"]
     assert jobs[1].status == JobStatus(
-        status=user_jobs[1]["jobStatus"]["name"],
-        date=user_jobs[1]["jobStatus"]["date"]
+        status=user_jobs[1]["job_status"]["name"],
+        date=user_jobs[1]["job_status"]["date"]
     )
-    assert jobs[1].event_id == EventID(**convert_dict_keys(user_jobs[1]["eventId"]))
+    assert jobs[1].event_id == EventID(**user_jobs[1]["event_id"])
     assert jobs[1].user == user_jobs[1]["user"]
 
     assert jobs[2].job_id == user_jobs[2]["id"]
     assert jobs[2].name == user_jobs[2]["name"]
     assert jobs[2].description == user_jobs[2]["description"]
     assert jobs[2].status == JobStatus(
-        status=user_jobs[2]["jobStatus"]["name"],
-        date=user_jobs[2]["jobStatus"]["date"]
+        status=user_jobs[2]["job_status"]["name"],
+        date=user_jobs[2]["job_status"]["date"]
     )
-    assert jobs[2].event_id == EventID(**convert_dict_keys(user_jobs[2]["eventId"]))
+    assert jobs[2].event_id == EventID(**user_jobs[2]["event_id"])
     assert jobs[2].user == user_jobs[2]["user"]
 
 
@@ -264,9 +263,9 @@ def test_gwcloud_files_by_job_id(job_file_request):
     file_list, uploaded = gwc._get_files_by_job_id('arbitrary_job_id')
 
     for i, ref in enumerate(file_list):
-        job_file_request[i].pop('isDir')
+        job_file_request[i].pop('is_dir', None)
         assert ref == FileReference(
-            **convert_dict_keys(job_file_request[i]),
+            **job_file_request[i],
             job_id='arbitrary_job_id',
             uploaded=uploaded,
         )

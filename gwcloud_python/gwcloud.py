@@ -12,7 +12,7 @@ from gwdc_python.files import FileReference, FileReferenceList
 from .bilby_job import BilbyJob
 from .event_id import EventID
 from .helpers import TimeRange, Cluster
-from .utils import convert_dict_keys
+from .utils import rename_dict_keys
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 from .utils.file_upload import check_file
 from .settings import GWCLOUD_ENDPOINT
@@ -83,7 +83,7 @@ class GWCloud:
 
             data = self.request(query=query, variables=variables, authorize=False)
 
-        result = data['uploadSupportingFiles']['result']['result']
+        result = data['upload_supporting_files']['result']['result']
         if not result:
             raise Exception("Unable to upload supporting files. An error occurred on the remote side.")
 
@@ -142,13 +142,13 @@ class GWCloud:
 
         # Upload any supporting files returned by the job submission
         tokens, file_paths = [], []
-        for supporting_file in data['newBilbyJobFromIniString']['result']['supportingFiles']:
+        for supporting_file in data['new_bilby_job_from_ini_string']['result']['supporting_files']:
             tokens.append(supporting_file['token'])
-            file_paths.append(supporting_file['filePath'])
+            file_paths.append(supporting_file['file_path'])
 
         self._upload_supporting_files(tokens, file_paths)
 
-        job_id = data['newBilbyJobFromIniString']['result']['jobId']
+        job_id = data['new_bilby_job_from_ini_string']['result']['job_id']
         return self.get_job_by_id(job_id)
 
     def start_bilby_job_from_file(self, job_name, job_description, private, ini_file, cluster=Cluster.DEFAULT):
@@ -202,11 +202,10 @@ class GWCloud:
 
     def _get_job_model_from_query(self, query_data):
         if not query_data:
-            # logger.info('No')
             return None
         return BilbyJob(
             client=self,
-            **convert_dict_keys(
+            **rename_dict_keys(
                 query_data,
                 {'id': 'job_id'}
             )
@@ -263,11 +262,11 @@ class GWCloud:
 
         data = self.request(query=query, variables=variables)
 
-        if not data['publicBilbyJobs']['edges']:
+        if not data['public_bilby_jobs']['edges']:
             logger.info('Job search returned no results.')
             return []
 
-        return [self._get_job_model_from_query(job['node']) for job in data['publicBilbyJobs']['edges']]
+        return [self._get_job_model_from_query(job['node']) for job in data['public_bilby_jobs']['edges']]
 
     def get_job_by_id(self, job_id):
         """Get a Bilby job instance corresponding to a specific job ID
@@ -309,11 +308,11 @@ class GWCloud:
 
         data = self.request(query=query, variables=variables)
 
-        if not data['bilbyJob']:
+        if not data['bilby_job']:
             logger.info('No job matching input ID was returned.')
             return None
 
-        return self._get_job_model_from_query(data['bilbyJob'])
+        return self._get_job_model_from_query(data['bilby_job'])
 
     def get_user_jobs(self, number=100):
         """Obtains a list of Bilby jobs created by the user, filtering based on the search terms
@@ -360,7 +359,7 @@ class GWCloud:
 
         data = self.request(query=query, variables=variables)
 
-        return [self._get_job_model_from_query(job['node']) for job in data['bilbyJobs']['edges']]
+        return [self._get_job_model_from_query(job['node']) for job in data['bilby_jobs']['edges']]
 
     def _get_files_by_job_id(self, job_id):
         query = """
@@ -381,7 +380,7 @@ class GWCloud:
             "jobId": job_id
         }
 
-        data = convert_dict_keys(self.request(query=query, variables=variables))
+        data = self.request(query=query, variables=variables)
         uploaded = data['bilby_result_files']['is_uploaded_job']
 
         file_list = FileReferenceList()
@@ -513,7 +512,7 @@ class GWCloud:
 
         data = self.request(query=query, variables=variables)
 
-        return data['generateFileDownloadIds']['result']
+        return data['generate_file_download_ids']['result']
 
     def _generate_upload_token(self):
         """Creates a new long lived upload token for use uploading jobs
@@ -532,7 +531,7 @@ class GWCloud:
         """
 
         data = self.request(query=query)
-        return data['generateBilbyJobUploadToken']['token']
+        return data['generate_bilby_job_upload_token']['token']
 
     def upload_job_archive(self, description, job_archive, public=False):
         """Upload a bilby job to GWCloud by job output archive
@@ -577,7 +576,7 @@ class GWCloud:
 
             data = self.request(query=query, variables=variables, authorize=False)
 
-        job_id = data['uploadBilbyJob']['result']['jobId']
+        job_id = data['upload_bilby_job']['result']['job_id']
         return self.get_job_by_id(job_id)
 
     def upload_job_directory(self, description, job_directory, public=False):
@@ -649,7 +648,7 @@ class GWCloud:
             }
         }
         data = self.request(query=query, variables=variables)
-        logger.info(data['createEventId']['result'])
+        logger.info(data['create_event_id']['result'])
         return self.get_event_id(event_id=event_id)
 
     def update_event_id(self, event_id, trigger_id=None, nickname=None, is_ligo_event=None):
@@ -690,7 +689,7 @@ class GWCloud:
             }
         }
         data = self.request(query=query, variables=variables)
-        logger.info(data['updateEventId']['result'])
+        logger.info(data['update_event_id']['result'])
         return self.get_event_id(event_id=event_id)
 
     def delete_event_id(self, event_id):
@@ -717,7 +716,7 @@ class GWCloud:
             }
         }
         data = self.request(query=query, variables=variables)
-        logger.info(data['deleteEventId']['result'])
+        logger.info(data['delete_event_id']['result'])
 
     def get_event_id(self, event_id):
         """Get EventID by the event_id
@@ -749,7 +748,7 @@ class GWCloud:
             "eventId": event_id
         }
         data = self.request(query=query, variables=variables)
-        return EventID(**convert_dict_keys(data['eventId']))
+        return EventID(**data['event_id'])
 
     def get_all_event_ids(self):
         """Obtain a list of all Event IDs
@@ -775,4 +774,4 @@ class GWCloud:
             }
         """
         data = self.request(query=query)
-        return [EventID(**convert_dict_keys(event)) for event in data['allEventIds']]
+        return [EventID(**event) for event in data['all_event_ids']]
