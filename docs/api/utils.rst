@@ -20,13 +20,3 @@ The functions within this module are return lists of files based some identifier
    :members:
    :undoc-members:
    :show-inheritance:
-
-Utils
------
-
-The functions within this module are for general purpose use throughout the :mod:`gwcloud_python` package
-
-.. automodule:: gwcloud_python.utils.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:

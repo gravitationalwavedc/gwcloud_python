@@ -182,8 +182,6 @@ def test_bilby_job_full_file_list(mock_bilby_job_files, full):
 
 def test_bilby_job_file_filters(mocker, mock_bilby_job_files, full, default, png, corner, config):
     bilby_job = mock_bilby_job_files
-    print(bilby_job.__dict__)
-    print(bilby_job.__dir__())
 
     assert file_filters.sort_file_list(bilby_job.get_default_file_list()) == file_filters.sort_file_list(default)
     assert file_filters.sort_file_list(bilby_job.get_png_file_list()) == file_filters.sort_file_list(png)

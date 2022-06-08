@@ -1,16 +1,10 @@
-import logging
 from .utils import file_filters
-from .helpers import JobStatus
 from .event_id import EventID
 
 from gwdc_python.jobs import JobBase
+from gwdc_python.logger import create_logger
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-logger.addHandler(ch)
+logger = create_logger(__name__)
 
 
 class BilbyJob(JobBase):
@@ -48,26 +42,9 @@ class BilbyJob(JobBase):
     }
 
     def __init__(self, client, job_id, name, description, user, event_id, job_status, **kwargs):
-        self.client = client
-        self.job_id = job_id
-        self.name = name
-        self.description = description
-        self.user = user
+        super().__init__(client, job_id, name, description, user, job_status)
         self.event_id = EventID(**event_id) if event_id else None
-        self.status = JobStatus(status=job_status['name'], date=job_status['date'])
         self.other = kwargs
-        self.is_uploaded_job = None
-
-    def get_full_file_list(self):
-        """Get information for all files associated with this job
-
-        Returns
-        -------
-        ~gwdc_python.files.file_reference.FileReferenceList
-            Contains FileReference instances for each of the files associated with this job
-        """
-        result, self.is_uploaded_job = self.client._get_files_by_job_id(self.job_id)
-        return result
 
     def _update_job(self, **kwargs):
         query = """

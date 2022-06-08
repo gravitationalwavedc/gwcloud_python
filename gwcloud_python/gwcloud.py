@@ -1,4 +1,3 @@
-import logging
 import os
 import tarfile
 from pathlib import Path
@@ -8,21 +7,17 @@ from contextlib import ExitStack
 
 from gwdc_python import GWDC
 from gwdc_python.files import FileReference, FileReferenceList
+from gwdc_python.helpers import TimeRange, Cluster
+from gwdc_python.utils import rename_dict_keys
+from gwdc_python.logger import create_logger
 
 from .bilby_job import BilbyJob
 from .event_id import EventID
-from .helpers import TimeRange, Cluster
-from .utils import rename_dict_keys
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 from .utils.file_upload import check_file
 from .settings import GWCLOUD_ENDPOINT
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-logger.addHandler(ch)
+logger = create_logger(__name__)
 
 
 class GWCloud:
@@ -100,7 +95,7 @@ class GWCloud:
             True if job should be private, False if public
         ini_string : str
             The contents of a Bilby ini file
-        cluster : .Cluster or str
+        cluster : ~gwdc_python.helpers.Cluster or str
             The name of the cluster to submit the job to
 
         Returns
@@ -164,7 +159,7 @@ class GWCloud:
             True if job should be private, False if public
         ini_file : str or Path
             Path to an .ini file for running a Bilby job
-        cluster : .Cluster or str
+        cluster : ~gwdc_python.helpers.Cluster or str
             The name of the cluster to submit the job to
 
         Returns
@@ -219,7 +214,7 @@ class GWCloud:
         ----------
         search : str, optional
             Search terms by which to filter public job list, by default ""
-        time_range : .TimeRange or str, optional
+        time_range : ~gwdc_python.helpers.TimeRange or str, optional
             Time range by which to filter job list, by default TimeRange.ANY
         number : int, optional
             Number of job results to return in one request, by default 100
@@ -399,12 +394,13 @@ class GWCloud:
         return file_list, uploaded
 
     def get_files_by_reference(self, file_references):
-        """Obtains file data when provided a FileReferenceList
+        """Obtains file data when provided a :class:`~gwdc_python.files.file_reference.FileReferenceList`
 
         Parameters
         ----------
-        file_references : FileReferenceList
-            Contains the :class:`FileReference` objects for which to download the contents
+        file_references : ~gwdc_python.files.file_reference.FileReferenceList
+            Contains the :class:`~gwdc_python.files.file_reference.FileReference` objects for which
+            to download the contents
 
         Returns
         -------
@@ -432,12 +428,13 @@ class GWCloud:
         return files
 
     def save_files_by_reference(self, file_references, root_path, preserve_directory_structure=True):
-        """Save files when provided a FileReferenceList and a root path
+        """Save files when provided a :class:`~gwdc_python.files.file_reference.FileReferenceList` and a root path
 
         Parameters
         ----------
-        file_references : FileReferenceList
-            Contains the :class:`FileReference` objects for which to save the associated files
+        file_references : ~gwdc_python.files.file_reference.FileReferenceList
+            Contains the :class:`~gwdc_python.files.file_reference.FileReference` objects for which
+            to save the associated files
         root_path : str or ~pathlib.Path
             Directory into which to save the files
         preserve_directory_structure : bool, optional

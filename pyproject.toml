@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gwcloud-python"
-version = "1.8.0"
+version = "1.9.0"
 description = "Wrapper of GWDC API, used for interacting with the GWCloud endpoints"
 authors = ["Thomas Reichardt <treichardt@swin.edu.au>"]
 license = "MIT"
@@ -11,7 +11,7 @@ include = ["LICENSE",]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-gwdc-python = "^0.3.0"
+gwdc-python = "^0.4.0"
 requests = "^2.25.1"
 jwt = "^1.2.0"
 graphene-file-upload = "^1.3.0"
