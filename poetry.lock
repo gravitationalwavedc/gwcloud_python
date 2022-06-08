@@ -147,16 +147,8 @@ flask = ["Flask (>=1.0.2)", "graphene (>=2.1.2)", "Flask-Graphql (>=2.0.0)"]
 tests = ["coverage", "pytest", "pytest-cov", "pytest-django"]
 
 [[package]]
-name = "graphql-core"
-version = "3.2.1"
-description = "GraphQL implementation for Python, a port of GraphQL.js, the JavaScript reference implementation for GraphQL."
-category = "main"
-optional = false
-python-versions = ">=3.6,<4"
-
-[[package]]
 name = "gwdc-python"
-version = "0.3.2"
+version = "0.4.0"
 description = "API for GWDC modules"
 category = "main"
 optional = false
@@ -169,7 +161,6 @@ jwt = "^1.2.0"
 pyhumps = "^3.7.1"
 requests = "^2.25.1"
 requests-toolbelt = "^0.9.1"
-sgqlc = "^16.0"
 tqdm = "^4.61.2"
 
 [package.extras]
@@ -452,22 +443,6 @@ python-versions = "*"
 requests = ">=2.0.1,<3.0.0"
 
 [[package]]
-name = "sgqlc"
-version = "16.0"
-description = "Simple GraphQL Client"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-graphql-core = "*"
-
-[package.extras]
-requests = ["requests"]
-sphinx = ["sphinx", "sphinx-argparse"]
-websocket = ["websocket-client"]
-
-[[package]]
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
@@ -673,7 +648,7 @@ docs = ["Sphinx", "sphinx-rtd-theme"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "374fad1cb1d11b1ae62061c3ee6e251957332247cb0717504ca3e278e11603df"
+content-hash = "3709bfce7e0fb10bfdacd6214d58e8011fc2607a613e0e00f8b73758f9aca19c"
 
 [metadata.files]
 alabaster = [
@@ -846,10 +821,6 @@ graphene-file-upload = [
     {file = "graphene_file_upload-1.3.0-py3-none-any.whl", hash = "sha256:5afe50f409f50e3d198fd92c883d98d868e6c6aaadf5df3a3f4d88ecad90ed97"},
     {file = "graphene_file_upload-1.3.0.tar.gz", hash = "sha256:6898480b0556826472c80971032917c01968ade5800d84054008fe598795b063"},
 ]
-graphql-core = [
-    {file = "graphql-core-3.2.1.tar.gz", hash = "sha256:9d1bf141427b7d54be944587c8349df791ce60ade2e3cccaf9c56368c133c201"},
-    {file = "graphql_core-3.2.1-py3-none-any.whl", hash = "sha256:f83c658e4968998eed1923a2e3e3eddd347e005ac0315fbb7ca4d70ea9156323"},
-]
 gwdc-python = []
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
@@ -983,11 +954,6 @@ requests-mock = [
 requests-toolbelt = [
     {file = "requests-toolbelt-0.9.1.tar.gz", hash = "sha256:968089d4584ad4ad7c171454f0a5c6dac23971e9472521ea3b6d49d610aa6fc0"},
     {file = "requests_toolbelt-0.9.1-py2.py3-none-any.whl", hash = "sha256:380606e1d10dc85c3bd47bf5a6095f815ec007be7a8b69c878507068df059e6f"},
-]
-sgqlc = [
-    {file = "sgqlc-16.0-py3-none-any.whl", hash = "sha256:fd55d808e17c96392bcc9058b31433ef9ae6376ca36a6352d4bd602b968193a2"},
-    {file = "sgqlc-16.0-py3.9.egg", hash = "sha256:e65022b7f9d6842e23153a419ddcd4690b2760a11c196ad44b9c71deac937ab5"},
-    {file = "sgqlc-16.0.tar.gz", hash = "sha256:e8de916cc8fab5470803c01c06e0fc0a0aad6ecef2b6cdb48e5143a6e2cd7e0a"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},

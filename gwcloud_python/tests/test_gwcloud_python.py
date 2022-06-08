@@ -1,4 +1,6 @@
-from gwcloud_python import GWCloud, FileReference, FileReferenceList, JobStatus, EventID
+from gwcloud_python import GWCloud, EventID
+from gwdc_python.files import FileReference, FileReferenceList
+from gwdc_python.helpers import JobStatus
 import pytest
 from tempfile import TemporaryFile
 

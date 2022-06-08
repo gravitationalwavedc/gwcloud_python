@@ -8,5 +8,4 @@ API Reference
    gwcloud
    bilbyjob
    eventid
-   helpers
    utils
