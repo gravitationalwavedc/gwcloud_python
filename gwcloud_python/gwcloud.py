@@ -13,6 +13,7 @@ from gwdc_python.logger import create_logger
 
 from .bilby_job import BilbyJob
 from .event_id import EventID
+from .exceptions import custom_error_handler
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 from .utils.file_upload import check_file
 from .settings import GWCLOUD_ENDPOINT, GWCLOUD_AUTH_ENDPOINT
@@ -39,7 +40,12 @@ class GWCloud:
         Handles a lot of the underlying logic surrounding the queries
     """
     def __init__(self, token, auth_endpoint=GWCLOUD_AUTH_ENDPOINT, endpoint=GWCLOUD_ENDPOINT):
-        self.client = GWDC(token=token, auth_endpoint=auth_endpoint, endpoint=endpoint)
+        self.client = GWDC(
+            token=token,
+            auth_endpoint=auth_endpoint,
+            endpoint=endpoint,
+            custom_error_handler=custom_error_handler
+        )
         self.request = self.client.request  # Setting shorthand for simplicity
 
     def _upload_supporting_files(self, tokens, file_paths):

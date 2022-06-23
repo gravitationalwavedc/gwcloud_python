@@ -11,7 +11,7 @@ include = ["LICENSE",]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-gwdc-python = "^0.4.0"
+gwdc-python = "^0.4.1"
 requests = "^2.25.1"
 jwt = "^1.2.0"
 graphene-file-upload = "^1.3.0"
