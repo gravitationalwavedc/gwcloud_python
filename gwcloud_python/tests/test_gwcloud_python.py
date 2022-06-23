@@ -7,7 +7,7 @@ from tempfile import TemporaryFile
 
 @pytest.fixture
 def mock_gwdc_init(mocker):
-    def mock_init(self, token, endpoint):
+    def mock_init(self, token, auth_endpoint, endpoint, custom_error_handler=None):
         pass
 
     mocker.patch('gwdc_python.gwdc.GWDC.__init__', mock_init)
