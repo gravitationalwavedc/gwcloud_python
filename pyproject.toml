@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "gwcloud-python"
-version = "1.9.1"
+version = "1.10.0"
 description = "Wrapper of GWDC API, used for interacting with the GWCloud endpoints"
-authors = ["Thomas Reichardt <treichardt@swin.edu.au>"]
+authors = ["Thomas Reichardt <treichardt@swin.edu.au>", "Lewis Lakerink <llakerink@swin.edu.au>"]
 license = "MIT"
 readme = "README.rst"
 documentation = "https://gwcloud-python.readthedocs.io/en/latest/"
@@ -25,7 +25,7 @@ docs = ["Sphinx", "sphinx-rtd-theme"]
 
 [tool.poetry.dev-dependencies]
 gwdc-python = {path = "../gwdc-python/", develop = true}
-pytest = "^5.2"
+pytest = "^7.1.2"
 requests-mock = "^1.8.0"
 pyflakes = "^2.3.1"
 flake8 = "^3.9.2"
