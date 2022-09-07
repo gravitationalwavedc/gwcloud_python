@@ -39,7 +39,7 @@ class GWCloud:
     client : GWDC
         Handles a lot of the underlying logic surrounding the queries
     """
-    def __init__(self, token, auth_endpoint=GWCLOUD_AUTH_ENDPOINT, endpoint=GWCLOUD_ENDPOINT):
+    def __init__(self, token="", auth_endpoint=GWCLOUD_AUTH_ENDPOINT, endpoint=GWCLOUD_ENDPOINT):
         self.client = GWDC(
             token=token,
             auth_endpoint=auth_endpoint,
