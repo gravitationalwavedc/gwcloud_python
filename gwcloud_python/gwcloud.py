@@ -615,7 +615,7 @@ class GWCloud:
             # Upload the archive
             return self.upload_job_archive(description, f.name, public)
 
-    def create_event_id(self, event_id, trigger_id=None, nickname=None, is_ligo_event=False):
+    def create_event_id(self, event_id, gps_time, trigger_id=None, nickname=None, is_ligo_event=False):
         """Create an Event ID that can be assigned to Bilby Jobs
 
         **INFO**:
@@ -625,6 +625,8 @@ class GWCloud:
         ----------
         event_id : str
             ID of the event, must be of the form GW123456_123456
+        gps_time : float
+            The GPS time that this Event ID represents, e.g. 1126259462.391
         trigger_id : str, optional
             Trigger ID of the event, must be of the form S123456a, by default None
         nickname : str, optional
@@ -650,13 +652,14 @@ class GWCloud:
                 "triggerId": trigger_id,
                 "nickname": nickname,
                 "isLigoEvent": is_ligo_event,
+                "gpsTime": gps_time,
             }
         }
         data = self.request(query=query, variables=variables)
         logger.info(data['create_event_id']['result'])
         return self.get_event_id(event_id=event_id)
 
-    def update_event_id(self, event_id, trigger_id=None, nickname=None, is_ligo_event=None):
+    def update_event_id(self, event_id, gps_time=None, trigger_id=None, nickname=None, is_ligo_event=None):
         """Create an Event ID that can be assigned to Bilby Jobs
 
         **INFO**:
@@ -666,6 +669,8 @@ class GWCloud:
         ----------
         event_id : str
             ID of the event, must be of the form GW123456_123456
+        gps_time : float, optional
+            The GPS time that this Event ID represents, e.g. 1126259462.391
         trigger_id : str, optional
             Trigger ID of the event, must be of the form S123456a, by default None
         nickname : str, optional
@@ -691,6 +696,7 @@ class GWCloud:
                 "triggerId": trigger_id,
                 "nickname": nickname,
                 "isLigoEvent": is_ligo_event,
+                "gpsTime": gps_time,
             }
         }
         data = self.request(query=query, variables=variables)
@@ -743,6 +749,7 @@ class GWCloud:
                     triggerId
                     nickname
                     isLigoEvent
+                    gpsTime
                 }
             }
         """
@@ -775,6 +782,7 @@ class GWCloud:
                     triggerId
                     nickname
                     isLigoEvent
+                    gpsTime
                 }
             }
         """
