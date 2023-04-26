@@ -16,6 +16,18 @@ As discussed in the previous section, we must first instantiate the class with o
 
     gwc = GWCloud(token='my_unique_gwcloud_api_token')
 
+If you wish to use GWCloud as an anonymous user, omit the token parameter:
+
+::
+
+    from gwcloud_python import GWCloud
+
+    gwc = GWCloud()
+
+.. warning::
+    Keep in mind that anonymous access will only provide a read-only interface to publicly accessible data. You will not be able to submit new jobs or access proprietary or embargoed data.
+
+
 Obtaining the preferred jobs
 ----------------------------
 

@@ -15,8 +15,14 @@ You will require Python 3.7+ to be able to use gwcloud-python. The recommended w
 
 Getting Access
 --------------
+Anonymous Access
+^^^^^^^^^^^^^^^^
+`gwcloud-python` allows anonymous access that is read-only for public data. This can be useful for people who are interested only in searching the database, viewing information, and downloading job results for public jobs.
 
-In order to be able to use the gwcloud-python package, you will need LIGO credentials or a GWCloud account. You will also need an API Token associated with that account.
+
+Authenticated Access
+^^^^^^^^^^^^^^^^^^^^
+In order to be able to use the `gwcloud-python` package for accessing proprietary data or submitting new jobs, you will need LIGO credentials or a GWCloud account. You will also need an API Token associated with that account.
 You can use your GWCloud or LIGO account details on the GWCloud `login page <https://gwcloud.org.au/auth/>`_.
 
 
