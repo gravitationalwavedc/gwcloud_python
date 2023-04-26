@@ -27,8 +27,8 @@ class GWCloud:
 
     Parameters
     ----------
-    token : str
-        API token for a Bilby user
+    token : str, optional
+        API token for a Bilby user. If omitted, creates an anonymous read-only GWCloud instance
     auth_endpoint : str, optional
         URL to which we send the authentication queries, by default GWCLOUD_AUTH_ENDPOINT
     endpoint : str, optional
