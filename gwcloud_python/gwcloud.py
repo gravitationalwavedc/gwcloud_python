@@ -374,7 +374,7 @@ class GWCloud:
                         fileSize
                         downloadToken
                     }
-                    isUploadedJob
+                    jobType
                 }
             }
         """
@@ -384,7 +384,7 @@ class GWCloud:
         }
 
         data = self.request(query=query, variables=variables)
-        uploaded = data['bilby_result_files']['is_uploaded_job']
+        job_type = data['bilby_result_files']['job_type']
 
         file_list = FileReferenceList()
         for file_data in data['bilby_result_files']['files']:
@@ -395,11 +395,11 @@ class GWCloud:
                 FileReference(
                     **file_data,
                     job_id=job_id,
-                    uploaded=uploaded
+                    job_type=job_type
                 )
             )
 
-        return file_list, uploaded
+        return file_list, job_type
 
     def get_files_by_reference(self, file_references):
         """Obtains file data when provided a :class:`~gwdc_python.files.file_reference.FileReferenceList`
@@ -426,10 +426,10 @@ class GWCloud:
         batched_files = FileReferenceList(list(itertools.chain.from_iterable(batched.values())))
 
         file_paths = batched_files.get_paths()
-        file_uploaded = batched_files.get_uploaded()
+        job_type = batched_files.get_job_type()
         total_size = batched_files.get_total_bytes()
 
-        files = _download_files(_get_file_map_fn, file_ids, file_paths, file_uploaded, total_size)
+        files = _download_files(_get_file_map_fn, file_ids, file_paths, job_type, total_size)
 
         logger.info(f'All {len(file_ids)} files downloaded!')
 
@@ -459,10 +459,10 @@ class GWCloud:
         batched_files = FileReferenceList(list(itertools.chain.from_iterable(batched.values())))
 
         file_paths = batched_files.get_output_paths(root_path, preserve_directory_structure)
-        file_uploaded = batched_files.get_uploaded()
+        job_type = batched_files.get_job_type()
         total_size = batched_files.get_total_bytes()
 
-        _download_files(_save_file_map_fn, file_ids, file_paths, file_uploaded, total_size)
+        _download_files(_save_file_map_fn, file_ids, file_paths, job_type, total_size)
 
         logger.info(f'All {len(file_ids)} files saved!')
 
