@@ -609,7 +609,6 @@ class GWCloud:
         with NamedTemporaryFile(dir=job_directory, suffix='.tar.gz') as f:
             with tarfile.open(f.name, "w:gz", compresslevel=2) as tar_handle:
                 for item in path.rglob("*"):
-                    print(item)
                     tar_handle.add(item, arcname=item.relative_to(path), recursive=False)
 
             # Upload the archive
