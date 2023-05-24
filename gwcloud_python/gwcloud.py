@@ -426,7 +426,7 @@ class GWCloud:
         batched_files = FileReferenceList(list(itertools.chain.from_iterable(batched.values())))
 
         file_paths = batched_files.get_paths()
-        job_type = batched_files.get_job_type()
+        job_type = batched_files.get_job_types()
         total_size = batched_files.get_total_bytes()
 
         files = _download_files(_get_file_map_fn, file_ids, file_paths, job_type, total_size)
@@ -458,11 +458,12 @@ class GWCloud:
         file_ids = list(itertools.chain.from_iterable(file_ids))
         batched_files = FileReferenceList(list(itertools.chain.from_iterable(batched.values())))
 
-        file_paths = batched_files.get_output_paths(root_path, preserve_directory_structure)
-        job_type = batched_files.get_job_type()
+        output_paths = batched_files.get_output_paths(root_path, preserve_directory_structure)
+        file_paths = batched_files.get_paths()
+        job_types = batched_files.get_job_types()
         total_size = batched_files.get_total_bytes()
 
-        _download_files(_save_file_map_fn, file_ids, file_paths, job_type, total_size)
+        _download_files(_save_file_map_fn, file_ids, output_paths, file_paths, job_types, total_size)
 
         logger.info(f'All {len(file_ids)} files saved!')
 
