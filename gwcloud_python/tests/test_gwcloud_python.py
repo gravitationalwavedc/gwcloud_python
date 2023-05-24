@@ -317,7 +317,7 @@ def test_gwcloud_get_files_by_reference(setup_mock_download_fns, mocker, test_fi
         mock_get_fn,
         mock_ids,
         test_files.get_paths(),
-        test_files.get_job_types(),
+        test_files.get_job_type(),
         test_files.get_total_bytes()
     )
 
@@ -343,6 +343,6 @@ def test_gwcloud_save_batched_files(setup_mock_download_fns, mocker, test_files)
         mock_ids,
         test_files.get_output_paths('test_dir', preserve_directory_structure=True),
         test_files.get_paths(),
-        test_files.get_job_types(),
+        test_files.get_job_type(),
         test_files.get_total_bytes()
     )
