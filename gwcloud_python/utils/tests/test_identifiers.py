@@ -108,7 +108,6 @@ def check_identifier(setup_paths):
         true_paths = [value for key, value in setup_paths.items() if key in true_path_keys]
         false_paths = [value for key, value in setup_paths.items() if key not in true_path_keys]
         for path in true_paths:
-            print(path)
             assert identifier(path) is True
 
         for path in false_paths:

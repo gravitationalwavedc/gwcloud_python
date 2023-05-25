@@ -1,4 +1,6 @@
 import pytest
+from gwdc_python.files.constants import JobType
+
 from gwcloud_python import BilbyJob, FileReference, FileReferenceList, EventID
 from gwcloud_python.utils import file_filters
 
@@ -154,7 +156,7 @@ def mock_bilby_job(mocker):
 
 @pytest.fixture
 def mock_bilby_job_files(mock_bilby_job, full):
-    return mock_bilby_job({'_get_files_by_job_id': (full, {'bilby_result_files': {'is_uploaded_job': False}})})
+    return mock_bilby_job({'_get_files_by_job_id': (full, {'bilby_result_files': {'job_type': JobType.NORMAL_JOB}})})
 
 
 @pytest.fixture
