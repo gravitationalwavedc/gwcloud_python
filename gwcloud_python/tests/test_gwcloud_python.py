@@ -186,26 +186,12 @@ def test_files():
             job_type=JobType.UPLOADED_JOB
         ),
         FileReference(
-            path='https://anotherurl.net/test/whatever/file1.h5',
-            file_size=1,
-            download_token='test_token_7',
+            path='https://anotherurl.net/test/whatever/',
+            file_size=None,
+            download_token=None,
             job_id='id3',
-            job_type=JobType.GWOSC_JOB
-        ),
-        FileReference(
-            path='https://myurl.com/test/file2.h5?download=1',
-            file_size=1,
-            download_token='test_token_8',
-            job_id='id3',
-            job_type=JobType.GWOSC_JOB
-        ),
-        FileReference(
-            path='https://myurl.com/test/file3.h5?download=1',
-            file_size=1,
-            download_token='test_token_9',
-            job_id='id3',
-            job_type=JobType.GWOSC_JOB
-        ),
+            job_type=JobType.EXTERNAL_JOB
+        )
     ])
 
 
@@ -301,7 +287,7 @@ def test_gwcloud_get_files_by_reference(setup_mock_download_fns, mocker, test_fi
     mock_download_files = setup_mock_download_fns[0]
     mock_get_fn = setup_mock_download_fns[1]
     mock_get_ids = setup_mock_download_fns[3]
-    mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22', 'id30', 'id31', 'id32']
+    mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22', 'id30']
 
     files = gwc.get_files_by_reference(test_files)
 
@@ -327,7 +313,7 @@ def test_gwcloud_save_batched_files(setup_mock_download_fns, mocker, test_files)
     mock_download_files = setup_mock_download_fns[0]
     mock_save_fn = setup_mock_download_fns[2]
     mock_get_ids = setup_mock_download_fns[3]
-    mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22', 'id30', 'id31', 'id32']
+    mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22', 'id30']
 
     gwc.save_files_by_reference(test_files, 'test_dir', preserve_directory_structure=True)
 
