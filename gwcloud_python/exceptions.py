@@ -2,6 +2,14 @@ import functools
 from gwdc_python.exceptions import GWDCAuthenticationError
 
 
+class ExternalFileDownloadException(Exception):
+    def __init(self, file_path):
+        super().__init__(
+            "Job results for this job are external to GWCloud. "
+            f"Please open the following link in a browser to explore the results: {file_path}"
+        )
+
+
 class GWCloudAuthenticationError(Exception):
     def __init__(self):
         super().__init__(
