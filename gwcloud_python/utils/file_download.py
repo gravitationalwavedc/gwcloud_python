@@ -3,12 +3,9 @@ from functools import partial
 import requests
 from gwdc_python.files.constants import JobType
 from tqdm import tqdm
+
+from ..exceptions import ExternalFileDownloadException
 from ..settings import GWCLOUD_FILE_DOWNLOAD_ENDPOINT, GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
-
-
-class ExternalFileDownloadException(Exception):
-    def __init__(self, *args):
-        super().__init__(*args)
 
 
 def _get_endpoint_from_uploaded(is_uploaded_job):
@@ -19,10 +16,7 @@ def _get_endpoint_from_uploaded(is_uploaded_job):
 
 def _get_file_map_fn(file_id, file_path, job_type, progress_bar):
     if job_type == JobType.EXTERNAL_JOB:
-        raise ExternalFileDownloadException(
-            f"Job results for this job are external to GWCloud. "
-            f"Please open the following link in a browser to explore the results: {file_path}"
-        )
+        raise ExternalFileDownloadException(file_path)
     else:
         download_url = _get_endpoint_from_uploaded(job_type == JobType.UPLOADED_JOB) + str(file_id)
 
@@ -37,10 +31,7 @@ def _get_file_map_fn(file_id, file_path, job_type, progress_bar):
 
 def _save_file_map_fn(file_id, output_path, file_path, job_type, progress_bar):
     if job_type == JobType.EXTERNAL_JOB:
-        raise ExternalFileDownloadException(
-            f"Job results for this job are external to GWCloud. "
-            f"Please open the following link in a browser to explore the results: {file_path}"
-        )
+        raise ExternalFileDownloadException(file_path)
     else:
         download_url = _get_endpoint_from_uploaded(job_type == JobType.UPLOADED_JOB) + str(file_id)
 

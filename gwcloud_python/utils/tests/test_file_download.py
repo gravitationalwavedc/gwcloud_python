@@ -1,10 +1,11 @@
 from gwdc_python.files.constants import JobType
 
+from gwcloud_python.exceptions import ExternalFileDownloadException
 from gwcloud_python.utils.file_download import (
     _get_endpoint_from_uploaded,
     _download_files,
     _get_file_map_fn,
-    _save_file_map_fn, ExternalFileDownloadException
+    _save_file_map_fn
 )
 from gwcloud_python.settings import GWCLOUD_FILE_DOWNLOAD_ENDPOINT, GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT
 import pytest
