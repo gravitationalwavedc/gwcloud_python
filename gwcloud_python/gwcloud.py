@@ -615,6 +615,55 @@ class GWCloud:
             # Upload the archive
             return self.upload_job_archive(description, f.name, public)
 
+    def upload_external_job(self, job_name, job_description, private, ini_string, url):
+        """Upload a Bilby job to GWCloud with external results
+
+        Parameters
+        ----------
+        job_name : str
+            Name of the job to be created
+        job_description : str
+            Description of the job to be created
+        private : bool
+            True if job should be private, False if public
+        ini_string : str
+            The contents of a Bilby ini file
+        url : str
+            The URL to the external results. Might be a url directly to a result file, or to a directory listing, or
+            something else
+
+        Returns
+        -------
+        BilbyJob
+            The created Bilby job
+        """
+        query = """
+            mutation UploadExternalBilbyJob($input: UploadExternalBilbyJobMutationInput!) {
+                uploadExternalBilbyJob(input: $input) {
+                    result {
+                        jobId
+                    }
+                }
+            }
+        """
+
+        variables = {
+            "input": {
+                "details": {
+                    "name": job_name,
+                    "description": job_description,
+                    "private": private
+                },
+                "iniFile": ini_string,
+                "resultUrl": url
+            }
+        }
+
+        data = self.request(query=query, variables=variables)
+
+        job_id = data['upload_external_bilby_job']['result']['job_id']
+        return self.get_job_by_id(job_id)
+
     def create_event_id(self, event_id, gps_time, trigger_id=None, nickname=None, is_ligo_event=False):
         """Create an Event ID that can be assigned to Bilby Jobs
 
