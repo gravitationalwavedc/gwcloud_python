@@ -84,6 +84,9 @@ This returns a new :class:`~gwdc_python.files.file_reference.FileReferenceList` 
 
 ::
 
+    >>> for f in result_json_files:
+    ...     print(f)
+
     FileReference(path=PosixPath('result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_merge_result.json'))
     FileReference(path=PosixPath('result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_par0_result.json'))
     FileReference(path=PosixPath('result/GW150914_data0_1126259462-391_analysis_H1L1_dynesty_par1_result.json'))

@@ -28,19 +28,22 @@ If you wish to use GWCloud as an anonymous user, omit the token parameter:
     Keep in mind that anonymous access will only provide a read-only interface to publicly accessible data. You will not be able to submit new jobs or access proprietary or embargoed data.
 
 
-Obtaining the preferred jobs
+Obtaining the official jobs
 ----------------------------
 
-There is a list of several jobs labelled as "Preferred" jobs, which should be used as the default jobs to use for analysis of a GW event.
-We are able to obtain information on the list of preferred Bilby jobs by running:
+There is a list of several jobs labelled as "Ffficial" jobs, which should be used as the default jobs to use for analysis of a GW event.
+We are able to obtain information on the list of official Bilby jobs by running:
 
 ::
 
-    jobs = gwc.get_preferred_job_list()
+    jobs = gwc.get_official_job_list()
 
 This method returns a list of BilbyJob instances, such as those shown below, each containing the information of the job in the GWCloud job database:
 
 ::
+
+    >>> for job in jobs:
+    ...     print(job)
 
     BilbyJob(name=GW150914, job_id=QmlsYnlKb2JOb2RlOjIxMQ==)
     BilbyJob(name=GW151012, job_id=QmlsYnlKb2JOb2RlOjIxMg==)
@@ -52,7 +55,7 @@ We are able to use these BilbyJob class instances to interact with the results o
 Searching the public job list
 -----------------------------
 
-While the preferred job list is often a good starting place to search for a desired job sample, there is often a need to search for other jobs available to the public.
+While the official job list is often a good starting place to search for a desired job sample, there is often a need to search for other jobs available to the public.
 To this end, the GWCloud class has another method, :meth:`~gwcloud_python.gwcloud.GWCloud.get_public_job_list`.
 We are able to use this method to search the public jobs. For example, if we wish to find the jobs submitted by Thomas Reichardt at any time in the past, we can run:
 

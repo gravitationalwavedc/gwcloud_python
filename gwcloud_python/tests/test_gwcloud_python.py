@@ -1,10 +1,11 @@
-from gwdc_python.files.constants import JobType
-
-from gwcloud_python import GWCloud, EventID
-from gwdc_python.files import FileReference, FileReferenceList
-from gwdc_python.helpers import JobStatus
 import pytest
 from tempfile import TemporaryFile
+
+from gwdc_python.files.constants import GWDCObjectType
+from gwdc_python.files import FileReference, FileReferenceList
+from gwdc_python.helpers import JobStatus
+
+from gwcloud_python import GWCloud, BilbyJob, EventID
 
 
 @pytest.fixture
@@ -22,6 +23,26 @@ def setup_mock_gwdc(mocker, mock_gwdc_init):
         mocker.patch('gwdc_python.gwdc.GWDC.request', mock_request)
 
     return mock_gwdc
+
+
+@pytest.fixture
+def mock_bilby_job():
+    def _mock_bilby_job(client, i=1, _type=GWDCObjectType.NORMAL):
+        job = BilbyJob(
+            client=client,
+            job_id=f'id{i}',
+            name='TestName',
+            description='Test description',
+            user='Test User',
+            event_id={'event_id': 'GW123456'},
+            job_status={
+                'name': 'Completed',
+                'date': '2021-12-02'
+            },
+        )
+        job.type = _type
+        return job
+    return _mock_bilby_job
 
 
 @pytest.fixture
@@ -133,7 +154,7 @@ def job_file_request(setup_mock_gwdc):
                 job_file_data_2,
                 job_file_data_3
             ],
-            "job_type": JobType.NORMAL_JOB
+            "job_type": GWDCObjectType.NORMAL
         }
     })
 
@@ -141,56 +162,52 @@ def job_file_request(setup_mock_gwdc):
 
 
 @pytest.fixture
-def test_files():
+def test_files(mocker, mock_bilby_job):
+    job1 = mock_bilby_job(mocker.Mock(), 1, GWDCObjectType.NORMAL)
+    job2 = mock_bilby_job(mocker.Mock(), 2, GWDCObjectType.UPLOADED)
+    job3 = mock_bilby_job(mocker.Mock(), 3, GWDCObjectType.EXTERNAL)
     return FileReferenceList([
         FileReference(
             path='test/path_1.png',
             file_size=1,
             download_token='test_token_1',
-            job_id='id1',
-            job_type=JobType.NORMAL_JOB
+            parent=job1
         ),
         FileReference(
             path='test/path_2.png',
             file_size=1,
             download_token='test_token_2',
-            job_id='id1',
-            job_type=JobType.NORMAL_JOB
+            parent=job1
         ),
         FileReference(
             path='test/path_3.png',
             file_size=1,
             download_token='test_token_3',
-            job_id='id1',
-            job_type=JobType.NORMAL_JOB
+            parent=job1
         ),
         FileReference(
             path='test/path_4.png',
             file_size=1,
             download_token='test_token_4',
-            job_id='id2',
-            job_type=JobType.UPLOADED_JOB
+            parent=job2
         ),
         FileReference(
             path='test/path_5.png',
             file_size=1,
             download_token='test_token_5',
-            job_id='id2',
-            job_type=JobType.UPLOADED_JOB
+            parent=job2
         ),
         FileReference(
             path='test/path_6.png',
             file_size=1,
             download_token='test_token_6',
-            job_id='id2',
-            job_type=JobType.UPLOADED_JOB
+            parent=job2
         ),
         FileReference(
             path='https://anotherurl.net/test/whatever/',
             file_size=None,
             download_token=None,
-            job_id='id3',
-            job_type=JobType.EXTERNAL_JOB
+            parent=job3
         )
     ])
 
@@ -221,7 +238,7 @@ def test_get_job_by_id(single_job_request):
 
     job = gwc.get_job_by_id('job_id')
 
-    assert job.job_id == single_job_request["id"]
+    assert job.id == single_job_request["id"]
     assert job.name == single_job_request["name"]
     assert job.description == single_job_request["description"]
     assert job.status == JobStatus(
@@ -237,7 +254,7 @@ def test_get_user_jobs(user_jobs):
 
     jobs = gwc.get_user_jobs()
 
-    assert jobs[0].job_id == user_jobs[0]["id"]
+    assert jobs[0].id == user_jobs[0]["id"]
     assert jobs[0].name == user_jobs[0]["name"]
     assert jobs[0].description == user_jobs[0]["description"]
     assert jobs[0].status == JobStatus(
@@ -247,7 +264,7 @@ def test_get_user_jobs(user_jobs):
     assert jobs[0].event_id == EventID(**user_jobs[0]["event_id"])
     assert jobs[0].user == user_jobs[0]["user"]
 
-    assert jobs[1].job_id == user_jobs[1]["id"]
+    assert jobs[1].id == user_jobs[1]["id"]
     assert jobs[1].name == user_jobs[1]["name"]
     assert jobs[1].description == user_jobs[1]["description"]
     assert jobs[1].status == JobStatus(
@@ -257,7 +274,7 @@ def test_get_user_jobs(user_jobs):
     assert jobs[1].event_id == EventID(**user_jobs[1]["event_id"])
     assert jobs[1].user == user_jobs[1]["user"]
 
-    assert jobs[2].job_id == user_jobs[2]["id"]
+    assert jobs[2].id == user_jobs[2]["id"]
     assert jobs[2].name == user_jobs[2]["name"]
     assert jobs[2].description == user_jobs[2]["description"]
     assert jobs[2].status == JobStatus(
@@ -268,17 +285,17 @@ def test_get_user_jobs(user_jobs):
     assert jobs[2].user == user_jobs[2]["user"]
 
 
-def test_gwcloud_files_by_job_id(job_file_request):
+def test_gwcloud_files_by_bilby_job(job_file_request, mock_bilby_job):
     gwc = GWCloud(token='my_token')
 
-    file_list, job_type = gwc._get_files_by_job_id('arbitrary_job_id')
+    job = mock_bilby_job(gwc)
+    file_list = gwc._get_files_by_bilby_job(job)
 
     for i, ref in enumerate(file_list):
         job_file_request[i].pop('is_dir', None)
         assert ref == FileReference(
             **job_file_request[i],
-            job_id='arbitrary_job_id',
-            job_type=job_type,
+            parent=job
         )
 
 
@@ -302,9 +319,7 @@ def test_gwcloud_get_files_by_reference(setup_mock_download_fns, mocker, test_fi
     mock_download_files.assert_called_once_with(
         mock_get_fn,
         mock_ids,
-        test_files.get_paths(),
-        test_files.get_job_type(),
-        test_files.get_total_bytes()
+        test_files
     )
 
 
@@ -315,7 +330,9 @@ def test_gwcloud_save_batched_files(setup_mock_download_fns, mocker, test_files)
     mock_get_ids = setup_mock_download_fns[3]
     mock_ids = ['id10', 'id11', 'id12', 'id20', 'id21', 'id22', 'id30']
 
-    gwc.save_files_by_reference(test_files, 'test_dir', preserve_directory_structure=True)
+    mock_root_path = 'test_dir'
+
+    gwc.save_files_by_reference(test_files, mock_root_path)
 
     mock_calls = [
         mocker.call(job_id, job_files.get_tokens())
@@ -327,8 +344,6 @@ def test_gwcloud_save_batched_files(setup_mock_download_fns, mocker, test_files)
     mock_download_files.assert_called_once_with(
         mock_save_fn,
         mock_ids,
-        test_files.get_output_paths('test_dir', preserve_directory_structure=True),
-        test_files.get_paths(),
-        test_files.get_job_type(),
-        test_files.get_total_bytes()
+        test_files,
+        mock_root_path
     )

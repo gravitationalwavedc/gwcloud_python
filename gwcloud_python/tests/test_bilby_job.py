@@ -1,120 +1,125 @@
 import pytest
-from gwdc_python.files.constants import JobType
+from gwdc_python.files.constants import GWDCObjectType
 
 from gwcloud_python import BilbyJob, FileReference, FileReferenceList, EventID
 from gwcloud_python.utils import file_filters
 
 
 @pytest.fixture
-def png_data_result():
+def placeholder_bilby_job(mocker):
+    return mocker.Mock(**{'is_external.return_value': False})
+
+
+@pytest.fixture
+def png_data_result(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='data/dir/test1.png',
             file_size='1',
             download_token='test_token_1',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='data/dir/test2.png',
             file_size='1',
             download_token='test_token_2',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='result/dir/test1.png',
             file_size='1',
             download_token='test_token_3',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='result/dir/test2.png',
             file_size='1',
             download_token='test_token_4',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def png_extra():
+def png_extra(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='test1.png',
             file_size='1',
             download_token='test_token_5',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='test2.png',
             file_size='1',
             download_token='test_token_6',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='arbitrary/dir/test1.png',
             file_size='1',
             download_token='test_token_7',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='arbitrary/dir/test2.png',
             file_size='1',
             download_token='test_token_8',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def corner():
+def corner(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='test1_corner.png',
             file_size='1',
             download_token='test_token_9',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='test2_corner.png',
             file_size='1',
             download_token='test_token_10',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def config():
+def config(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='a_config_complete.ini',
             file_size='1',
             download_token='test_token_11',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def json():
+def json(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='result/dir/a_merge_result.json',
             file_size='1',
             download_token='test_token_12',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def index():
+def index(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='index.html',
             file_size='1',
             download_token='test_token_13',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
@@ -156,7 +161,9 @@ def mock_bilby_job(mocker):
 
 @pytest.fixture
 def mock_bilby_job_files(mock_bilby_job, full):
-    return mock_bilby_job({'_get_files_by_job_id': (full, {'bilby_result_files': {'job_type': JobType.NORMAL_JOB}})})
+    job = mock_bilby_job({'_get_files_by_bilby_job': full})
+    job.type = GWDCObjectType.NORMAL
+    return job
 
 
 @pytest.fixture
@@ -179,7 +186,7 @@ def test_bilby_job_full_file_list(mock_bilby_job_files, full):
     bilby_job = mock_bilby_job_files
     assert bilby_job.get_full_file_list() == full
 
-    bilby_job.client._get_files_by_job_id.assert_called_once()
+    bilby_job.client._get_files_by_bilby_job.assert_called_once()
 
 
 def test_bilby_job_file_filters(mocker, mock_bilby_job_files, full, default, png, corner, config):
@@ -190,26 +197,7 @@ def test_bilby_job_file_filters(mocker, mock_bilby_job_files, full, default, png
     assert file_filters.sort_file_list(bilby_job.get_corner_plot_file_list()) == file_filters.sort_file_list(corner)
     assert file_filters.sort_file_list(bilby_job.get_config_file_list()) == file_filters.sort_file_list(config)
 
-    assert bilby_job.client._get_files_by_job_id.call_count == 4
-
-
-def test_register_file_list_filter(mock_bilby_job_files, index):
-    bilby_job = mock_bilby_job_files
-
-    def get_html_file(file_list):
-        return [f for f in file_list if f.path.suffix == '.html']
-
-    assert getattr(bilby_job, 'get_index_file_list', None) is None
-    assert getattr(bilby_job, 'get_index_files', None) is None
-    assert getattr(bilby_job, 'save_index_files', None) is None
-
-    BilbyJob.register_file_list_filter('index', get_html_file)
-
-    assert getattr(bilby_job, 'get_index_file_list', None) is not None
-    assert getattr(bilby_job, 'get_index_files', None) is not None
-    assert getattr(bilby_job, 'save_index_files', None) is not None
-
-    assert bilby_job.get_index_file_list() == index
+    assert bilby_job.client._get_files_by_bilby_job.call_count == 4
 
 
 def test_bilbyjob_set_name(mock_bilby_job_update, update_query):
@@ -222,7 +210,7 @@ def test_bilbyjob_set_name(mock_bilby_job_update, update_query):
         query=update_query,
         variables={
             'input': {
-                'job_id': bilby_job.job_id,
+                'job_id': bilby_job.id,
                 'name': 'ADifferentName'
             }
         }
@@ -239,7 +227,7 @@ def test_bilbyjob_set_description(mock_bilby_job_update, update_query):
         query=update_query,
         variables={
             'input': {
-                'job_id': bilby_job.job_id,
+                'job_id': bilby_job.id,
                 'description': 'A different description'
             }
         }
@@ -259,7 +247,7 @@ def test_bilbyjob_set_event_id(mock_bilby_job, update_query):
         query=update_query,
         variables={
             'input': {
-                'job_id': bilby_job.job_id,
+                'job_id': bilby_job.id,
                 'event_id': 'GW111111'
             }
         }

@@ -67,15 +67,11 @@ Monitoring job status
 
 While :class:`.BilbyJob` instances only show the job name and ID when printed, they store more useful attributes, such as the description, the job status and others.
 To observe the status of a job, we can just print the :attr:`.BilbyJob.status` attribute. This attribute stores a dictionary containing the status name and the date when this status began.
-For example, if we run:
+For example, if we print the job status, we are shown that the job has been completed, and hence will have an associated list of result files:
 
 ::
     
-    print(job.status)
-
-we are shown that the job has been completed, and hence will have an associated list of result files:
-
-::
+    >>> print(job.status)
 
     {'name': 'Completed', 'date': '2021-05-31T03:16:36+00:00'}
 
