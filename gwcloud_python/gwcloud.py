@@ -188,8 +188,9 @@ class GWCloud:
         finally:
             os.chdir(str(cwd))
 
-    def get_preferred_job_list(self, search=""):
-        """Get list of public Bilby jobs corresponding to a search of "preferred" and a time_range of "Any time"
+    def get_official_job_list(self, search=""):
+        """Get list of public Bilby jobs corresponding to a search of "labels.name:Official" and
+        a time_range of "Any time"
 
         Parameters
         ----------
@@ -199,13 +200,14 @@ class GWCloud:
         Returns
         -------
         list
-            List of BilbyJob instances for the preferred jobs corresponding to the search terms
+            List of BilbyJob instances for the official jobs corresponding to the search terms
         """
-        return self.get_public_job_list(search=f"preferred lasky {search}", time_range=TimeRange.ANY)
+        return self.get_public_job_list(search=f"labels.name:Official {search}", time_range=TimeRange.ANY)
 
     def _get_job_model_from_query(self, query_data):
         if not query_data:
             return None
+
         return BilbyJob(
             client=self,
             **rename_dict_keys(
@@ -364,7 +366,7 @@ class GWCloud:
 
         return [self._get_job_model_from_query(job['node']) for job in data['bilby_jobs']['edges']]
 
-    def _get_files_by_job_id(self, job_id):
+    def _get_files_by_bilby_job(self, job):
         query = """
             query ($jobId: ID!) {
                 bilbyResultFiles (jobId: $jobId) {
@@ -380,11 +382,11 @@ class GWCloud:
         """
 
         variables = {
-            "jobId": job_id
+            "jobId": job.id
         }
 
         data = self.request(query=query, variables=variables)
-        job_type = data['bilby_result_files']['job_type']
+        job.type = data['bilby_result_files']['job_type']
 
         file_list = FileReferenceList()
         for file_data in data['bilby_result_files']['files']:
@@ -394,12 +396,10 @@ class GWCloud:
             file_list.append(
                 FileReference(
                     **file_data,
-                    job_id=job_id,
-                    job_type=job_type
+                    parent=job
                 )
             )
-
-        return file_list, job_type
+        return file_list
 
     def get_files_by_reference(self, file_references):
         """Obtains file data when provided a :class:`~gwdc_python.files.file_reference.FileReferenceList`
@@ -425,17 +425,14 @@ class GWCloud:
         file_ids = list(itertools.chain.from_iterable(file_ids))
         batched_files = FileReferenceList(list(itertools.chain.from_iterable(batched.values())))
 
-        file_paths = batched_files.get_paths()
-        job_type = batched_files.get_job_type()
-        total_size = batched_files.get_total_bytes()
-
-        files = _download_files(_get_file_map_fn, file_ids, file_paths, job_type, total_size)
+        files = _download_files(_get_file_map_fn, file_ids, batched_files)
+        file_dict = {key: val for key, val in files}
 
         logger.info(f'All {len(file_ids)} files downloaded!')
 
-        return files
+        return [(ref.path, file_dict[ref.path]) for ref in file_references]
 
-    def save_files_by_reference(self, file_references, root_path, preserve_directory_structure=True):
+    def save_files_by_reference(self, file_references, root_path):
         """Save files when provided a :class:`~gwdc_python.files.file_reference.FileReferenceList` and a root path
 
         Parameters
@@ -445,8 +442,6 @@ class GWCloud:
             to save the associated files
         root_path : str or ~pathlib.Path
             Directory into which to save the files
-        preserve_directory_structure : bool, optional
-            Remove any directory structure for the downloaded files, by default True
         """
         batched = file_references.batched
 
@@ -458,12 +453,7 @@ class GWCloud:
         file_ids = list(itertools.chain.from_iterable(file_ids))
         batched_files = FileReferenceList(list(itertools.chain.from_iterable(batched.values())))
 
-        output_paths = batched_files.get_output_paths(root_path, preserve_directory_structure)
-        file_paths = batched_files.get_paths()
-        job_types = batched_files.get_job_type()
-        total_size = batched_files.get_total_bytes()
-
-        _download_files(_save_file_map_fn, file_ids, output_paths, file_paths, job_types, total_size)
+        _download_files(_save_file_map_fn, file_ids, batched_files, root_path)
 
         logger.info(f'All {len(file_ids)} files saved!')
 

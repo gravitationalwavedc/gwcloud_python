@@ -1,13 +1,14 @@
 from .utils import file_filters
 from .event_id import EventID
 
-from gwdc_python.jobs import JobBase
+from gwdc_python.objects.base import GWDCObjectBase
 from gwdc_python.logger import create_logger
+from gwdc_python.helpers import JobStatus
 
 logger = create_logger(__name__)
 
 
-class BilbyJob(JobBase):
+class BilbyJob(GWDCObjectBase):
     """
     BilbyJob class is useful for interacting with the Bilby jobs returned from a call to the GWCloud API.
     It is primarily used to store job information and obtain files related to the job.
@@ -42,9 +43,16 @@ class BilbyJob(JobBase):
     }
 
     def __init__(self, client, job_id, name, description, user, event_id, job_status, **kwargs):
-        super().__init__(client, job_id, name, description, user, job_status)
+        super().__init__(client, job_id)
+        self.name = name
+        self.description = description
+        self.user = user
+        self.status = JobStatus(status=job_status['name'], date=job_status['date'])
         self.event_id = EventID(**event_id) if event_id else None
         self.other = kwargs
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(name={self.name}), user={self.user}"
 
     def _update_job(self, **kwargs):
         query = """
@@ -57,7 +65,7 @@ class BilbyJob(JobBase):
 
         variables = {
             "input": {
-                "job_id": self.job_id,
+                "job_id": self.id,
                 **kwargs
             }
         }

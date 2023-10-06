@@ -23,7 +23,7 @@ Example
 
     >>> from gwcloud_python import GWCloud
     >>> gwc = GWCloud(token='<user_api_token_here>')
-    >>> job = gwc.get_preferred_job_list()[0]
+    >>> job = gwc.get_official_job_list()[0]
     >>> job.save_corner_plot_files()
 
     100%|██████████████████████████████████████| 3.76M/3.76M [00:00<00:00, 5.20MB/s]

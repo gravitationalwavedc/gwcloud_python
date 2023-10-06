@@ -4,139 +4,144 @@ from gwcloud_python import FileReference, FileReferenceList
 
 
 @pytest.fixture
-def png_data():
+def placeholder_bilby_job(mocker):
+    return mocker.Mock(**{'is_external.return_value': False})
+
+
+@pytest.fixture
+def png_data(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='data/dir/test1.png',
             file_size='1',
             download_token='test_token_1',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='data/dir/test2.png',
             file_size='1',
             download_token='test_token_2',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def png_result():
+def png_result(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='result/dir/test1.png',
             file_size='1',
             download_token='test_token_3',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='result/dir/test2.png',
             file_size='1',
             download_token='test_token_4',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def png_extra_no_dir():
+def png_extra_no_dir(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='test1.png',
             file_size='1',
             download_token='test_token_5',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='test2.png',
             file_size='1',
             download_token='test_token_6',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def png_extra_dir():
+def png_extra_dir(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='arbitrary/dir/test1.png',
             file_size='1',
             download_token='test_token_7',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='arbitrary/dir/test2.png',
             file_size='1',
             download_token='test_token_8',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def corner():
+def corner(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='test1_corner.png',
             file_size='1',
             download_token='test_token_9',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
         FileReference(
             path='test2_corner.png',
             file_size='1',
             download_token='test_token_10',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def index():
+def index(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='index.html',
             file_size='1',
             download_token='test_token_11',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def config():
+def config(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='a_config_complete.ini',
             file_size='1',
             download_token='test_token_12',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def merge():
+def merge(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='result/dir/a_merge_result.json',
             file_size='1',
             download_token='test_token_13',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
 
 @pytest.fixture
-def unmerge():
+def unmerge(placeholder_bilby_job):
     return FileReferenceList([
         FileReference(
             path='result/dir/a_result.json',
             file_size='1',
             download_token='test_token_14',
-            job_id='id'
+            parent=placeholder_bilby_job
         ),
     ])
 
