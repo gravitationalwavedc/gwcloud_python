@@ -189,7 +189,8 @@ class GWCloud:
             os.chdir(str(cwd))
 
     def get_official_job_list(self, search=""):
-        """Get list of public Bilby jobs corresponding to a search of "labels.name:Official" and a time_range of "Any time"
+        """Get list of public Bilby jobs corresponding to a search of "labels.name:Official" and
+        a time_range of "Any time"
 
         Parameters
         ----------

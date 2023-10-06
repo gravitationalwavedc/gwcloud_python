@@ -31,7 +31,7 @@ If you wish to use GWCloud as an anonymous user, omit the token parameter:
 Obtaining the official jobs
 ----------------------------
 
-There is a list of several jobs labelled as "Ffficial" jobs, which should be used as the default jobs to use for analysis of a GW event.
+There is a list of several jobs labelled as "Official" jobs, which should be used as the default jobs to use for analysis of a GW event.
 We are able to obtain information on the list of official Bilby jobs by running:
 
 ::
