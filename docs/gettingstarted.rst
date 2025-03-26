@@ -23,13 +23,13 @@ Anonymous Access
 Authenticated Access
 ^^^^^^^^^^^^^^^^^^^^
 In order to be able to use the `gwcloud-python` package for accessing proprietary data or submitting new jobs, you will need LIGO credentials or a GWCloud account. You will also need an API Token associated with that account.
-You can use your GWCloud or LIGO account details on the GWCloud `login page <https://gwcloud.org.au/auth/>`_.
+You can use your GWCloud or LIGO account details on the GWCloud `login page <https://gwcloud.org.au/sso/login/>`_.
 
 
-If you don't have an existing GWCloud account, `register here <https://gwcloud.org.au/auth/register/>`_.
+If you don't have an existing GWCloud account, `register here <https://gwcloud.org.au/sso/signup/>`_.
 
 
-Using your GWCloud or LIGO account, you can generate an `API token <https://gwcloud.org.au/auth/api-token>`_.
+Using your GWCloud or LIGO account, you can generate an `API token <https://gwcloud.org.au/api-token>`_.
 You should be greeted with a page which has a "Create Token" button. If you click on this, a new, unique API token will be generated, which can be revealed by clicking on the text.
 
 
