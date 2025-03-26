@@ -53,7 +53,7 @@ code-quality:
   
 flake8:
     script:
-      - pip3 install flake8-gl-codeclimate
+      - pip3 install flake8
       - flake8 --exit-zero --format gl-codeclimate --output-file gl-code-quality-report.json
     artifacts:
       reports:
