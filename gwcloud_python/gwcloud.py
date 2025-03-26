@@ -16,7 +16,7 @@ from .event_id import EventID
 from .exceptions import custom_error_handler
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 from .utils.file_upload import check_file
-from .settings import GWCLOUD_ENDPOINT, GWCLOUD_AUTH_ENDPOINT
+from .settings import GWCLOUD_ENDPOINT
 
 logger = create_logger(__name__)
 
@@ -29,8 +29,6 @@ class GWCloud:
     ----------
     token : str, optional
         API token for a Bilby user. If omitted, creates an anonymous read-only GWCloud instance
-    auth_endpoint : str, optional
-        URL to which we send the authentication queries, by default GWCLOUD_AUTH_ENDPOINT
     endpoint : str, optional
         URL to which we send the queries, by default GWCLOUD_ENDPOINT
 
