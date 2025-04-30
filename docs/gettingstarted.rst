@@ -33,6 +33,6 @@ Using your GWCloud or LIGO account, you can generate an `API token <https://gwcl
 You should be greeted with a page which has a "Create Token" button. If you click on this, a new, unique API token will be generated.
 
 
-An API token operates as your credentials, replacing your username and password when using the API. Click "Copy Token" to copy the token to your clipboard.
+An API token operates as your credentials, replacing your username and password when using the API. Click "Copy" to copy the token to your clipboard.
 You are also able to revoke your token at any point by clicking the "Revoke Token" button, at which point the token will cease to function.
 You must not share it with anybody and should revoke and recreate it if somebody else obtains it.
