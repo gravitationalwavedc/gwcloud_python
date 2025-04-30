@@ -10,7 +10,7 @@ from gwcloud_python import GWCloud, BilbyJob, EventID
 
 @pytest.fixture
 def mock_gwdc_init(mocker):
-    def mock_init(self, token, auth_endpoint, endpoint, custom_error_handler=None):
+    def mock_init(self, token, endpoint, custom_error_handler=None):
         pass
 
     mocker.patch('gwdc_python.gwdc.GWDC.__init__', mock_init)

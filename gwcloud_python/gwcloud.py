@@ -16,7 +16,7 @@ from .event_id import EventID
 from .exceptions import custom_error_handler
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 from .utils.file_upload import check_file
-from .settings import GWCLOUD_ENDPOINT, GWCLOUD_AUTH_ENDPOINT
+from .settings import GWCLOUD_ENDPOINT
 
 logger = create_logger(__name__)
 
@@ -29,8 +29,6 @@ class GWCloud:
     ----------
     token : str, optional
         API token for a Bilby user. If omitted, creates an anonymous read-only GWCloud instance
-    auth_endpoint : str, optional
-        URL to which we send the authentication queries, by default GWCLOUD_AUTH_ENDPOINT
     endpoint : str, optional
         URL to which we send the queries, by default GWCLOUD_ENDPOINT
 
@@ -39,12 +37,12 @@ class GWCloud:
     client : GWDC
         Handles a lot of the underlying logic surrounding the queries
     """
-    def __init__(self, token="", auth_endpoint=GWCLOUD_AUTH_ENDPOINT, endpoint=GWCLOUD_ENDPOINT):
+
+    def __init__(self, token="", endpoint=GWCLOUD_ENDPOINT):
         self.client = GWDC(
             token=token,
-            auth_endpoint=auth_endpoint,
             endpoint=endpoint,
-            custom_error_handler=custom_error_handler
+            custom_error_handler=custom_error_handler,
         )
         self.request = self.client.request  # Setting shorthand for simplicity
 
