@@ -19,7 +19,7 @@ Your API token does not exist, make sure it is correct!
 Please read the API token documentation:
 https://gwcloud-python.readthedocs.io/en/latest/gettingstarted.html#getting-access
 
-Alternatively, head straight to https://gwcloud.org.au/api-token to create one.
+Alternatively, head straight to https://gwcloud.org.au/api-token/ to create one.
             """
         )
 
