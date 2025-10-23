@@ -1,5 +1,6 @@
+import os
 import pytest
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryFile
 
 from gwdc_python.files.constants import GWDCObjectType
 from gwdc_python.files import FileReference, FileReferenceList
@@ -347,3 +348,129 @@ def test_gwcloud_save_batched_files(setup_mock_download_fns, mocker, test_files)
         test_files,
         mock_root_path
     )
+
+
+def test_upload_hdf5_job(setup_mock_gwdc, mock_bilby_job, mocker):
+    """Test uploading a job with HDF5 file and INI file."""
+    
+    # Mock the upload token generation
+    mocker.patch('gwcloud_python.gwcloud.GWCloud._generate_upload_token', return_value='test_upload_token')
+    
+    # Mock the response from the upload mutation
+    upload_response = {
+        'upload_hdf5_bilby_job': {
+            'result': {
+                'job_id': 'test_job_id'
+            }
+        }
+    }
+    
+    # Mock the job retrieval
+    job_data = {
+        'bilby_job': {
+            'id': 'test_job_id',
+            'name': 'Test HDF5 Job',
+            'description': 'Test Description',
+            'user': 'Test User',
+            'event_id': None,
+            'job_status': {
+                'name': 'Completed',
+                'date': '2021-12-02'
+            },
+        }
+    }
+    
+    # Mock the request method to return different responses for different calls
+    mock_request = mocker.Mock(side_effect=[upload_response, job_data])
+    mocker.patch('gwdc_python.gwdc.GWDC.request', mock_request)
+    
+    # Create temporary files
+    with NamedTemporaryFile(suffix='.hdf5', delete=False) as hdf5_file:
+        hdf5_file.write(b'fake_hdf5_content')
+        hdf5_path = hdf5_file.name
+    
+    with NamedTemporaryFile(suffix='.ini', delete=False) as ini_file:
+        ini_file.write(b'label=test_job\noutdir=./')
+        ini_path = ini_file.name
+    
+    try:
+        gwc = GWCloud()
+        job = gwc.upload_hdf5_job(
+            description="Test HDF5 Job",
+            hdf5_file=hdf5_path,
+            ini_file=ini_path,
+            public=True
+        )
+        
+        assert isinstance(job, BilbyJob)
+        assert job.id == 'test_job_id'
+        assert job.name == 'Test HDF5 Job'
+        assert job.description == 'Test Description'
+        
+    finally:
+        # Clean up temporary files
+        os.unlink(hdf5_path)
+        os.unlink(ini_path)
+
+
+def test_upload_hdf5_job_private(setup_mock_gwdc, mock_bilby_job, mocker):
+    """Test uploading a private HDF5 job."""
+    
+    # Mock the upload token generation
+    mocker.patch('gwcloud_python.gwcloud.GWCloud._generate_upload_token', return_value='test_upload_token')
+    
+    # Mock the response from the upload mutation
+    upload_response = {
+        'upload_hdf5_bilby_job': {
+            'result': {
+                'job_id': 'test_job_id'
+            }
+        }
+    }
+    
+    # Mock the job retrieval
+    job_data = {
+        'bilby_job': {
+            'id': 'test_job_id',
+            'name': 'Test Private HDF5 Job',
+            'description': 'Test Private Description',
+            'user': 'Test User',
+            'event_id': None,
+            'job_status': {
+                'name': 'Completed',
+                'date': '2021-12-02'
+            },
+        }
+    }
+    
+    # Mock the request method to return different responses for different calls
+    mock_request = mocker.Mock(side_effect=[upload_response, job_data])
+    mocker.patch('gwdc_python.gwdc.GWDC.request', mock_request)
+    
+    # Create temporary files
+    with NamedTemporaryFile(suffix='.hdf5', delete=False) as hdf5_file:
+        hdf5_file.write(b'fake_hdf5_content')
+        hdf5_path = hdf5_file.name
+    
+    with NamedTemporaryFile(suffix='.ini', delete=False) as ini_file:
+        ini_file.write(b'label=test_private_job\noutdir=./')
+        ini_path = ini_file.name
+    
+    try:
+        gwc = GWCloud()
+        job = gwc.upload_hdf5_job(
+            description="Test Private HDF5 Job",
+            hdf5_file=hdf5_path,
+            ini_file=ini_path,
+            public=False  # Private job
+        )
+        
+        assert isinstance(job, BilbyJob)
+        assert job.id == 'test_job_id'
+        assert job.name == 'Test Private HDF5 Job'
+        assert job.description == 'Test Private Description'
+        
+    finally:
+        # Clean up temporary files
+        os.unlink(hdf5_path)
+        os.unlink(ini_path)

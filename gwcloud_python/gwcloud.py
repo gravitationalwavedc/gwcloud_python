@@ -652,6 +652,53 @@ class GWCloud:
         job_id = data['upload_external_bilby_job']['result']['job_id']
         return self.get_job_by_id(job_id)
 
+    def upload_hdf5_job(self, description, hdf5_file, ini_file, public=False):
+        """Upload a bilby job to GWCloud with HDF5 result file and INI configuration file
+
+        Parameters
+        ----------
+        description : str
+            The description of the job to add to the database
+        hdf5_file : str
+            The path to the HDF5 result file
+        ini_file : str
+            The path to the INI configuration file
+        public : bool
+            If the uploaded job should be public or not
+
+        Returns
+        -------
+        BilbyJob
+            The created Bilby job
+        """
+        query = """
+            mutation JobUploadMutation($input: UploadHdf5BilbyJobMutationInput!) {
+                uploadHdf5BilbyJob(input: $input) {
+                    result {
+                        jobId
+                    }
+                }
+            }
+        """
+
+        with open(hdf5_file, 'rb') as hdf5_f, open(ini_file, 'rb') as ini_f:
+            variables = {
+                "input": {
+                    "uploadToken": self._generate_upload_token(),
+                    "details": {
+                        "description": description,
+                        "private": not public
+                    },
+                    "hdf5File": hdf5_f,
+                    "iniFile": ini_f
+                }
+            }
+
+            data = self.request(query=query, variables=variables, authorize=False)
+
+        job_id = data['upload_hdf5_bilby_job']['result']['job_id']
+        return self.get_job_by_id(job_id)
+
     def create_event_id(self, event_id, gps_time, trigger_id=None, nickname=None, is_ligo_event=False):
         """Create an Event ID that can be assigned to Bilby Jobs
 
