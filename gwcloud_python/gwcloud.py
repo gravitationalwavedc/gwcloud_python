@@ -1,9 +1,10 @@
+import json
 import os
 import tarfile
+from contextlib import ExitStack
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 import itertools
-from contextlib import ExitStack
 
 from gwdc_python import GWDC
 from gwdc_python.files import FileReference, FileReferenceList
@@ -14,6 +15,7 @@ from gwdc_python.logger import create_logger
 from .bilby_job import BilbyJob
 from .event_id import EventID
 from .exceptions import custom_error_handler
+from .gwflow import GWFlowPendingFile, GWFlowJobUpsertResult
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 from .utils.file_upload import check_file
 from .settings import GWCLOUD_ENDPOINT
@@ -872,3 +874,212 @@ class GWCloud:
         """
         data = self.request(query=query)
         return [EventID(**event) for event in data['all_event_ids']]
+
+    @staticmethod
+    def _format_gwflow_files(files):
+        """Convert a list of file dicts from snake_case to the camelCase shape expected by the server.
+
+        Parameters
+        ----------
+        files : list of dict
+            Each dict may use snake_case keys (``analysis_uid``, ``file_name``, ``file_size``,
+            ``md5_sum``) or camelCase equivalents.
+
+        Returns
+        -------
+        list of dict
+            Dicts with camelCase keys ready to include in the GraphQL variables.
+        """
+        formatted = []
+        for f in files:
+            ff = {}
+            analysis_uid = f.get('analysis_uid') or f.get('analysisUid')
+            if analysis_uid is not None:
+                ff['analysisUid'] = analysis_uid
+            path = f.get('path')
+            if path is not None:
+                ff['path'] = path
+            file_name = f.get('file_name') or f.get('fileName')
+            if file_name is not None:
+                ff['fileName'] = file_name
+            file_size = f['file_size'] if 'file_size' in f else f.get('fileSize')
+            if file_size is not None:
+                ff['fileSize'] = file_size
+            md5_sum = f.get('md5_sum') or f.get('md5Sum')
+            if md5_sum is not None:
+                ff['md5Sum'] = md5_sum
+            formatted.append(ff)
+        return formatted
+
+    def upsert_gwflow_job(
+        self, sname, *, schema_version=None, metadata=None,
+        libraries=None, is_pruned=None, ligo_only=None,
+        event_id=None, current_history_id=None,
+        current_history_timestamp=None, files=None
+    ) -> 'GWFlowJobUpsertResult':
+        """Upsert a GWFlow job record (transactional get-or-create by sname).
+
+        Parameters
+        ----------
+        sname : str
+            Super-name of the job
+        schema_version : str, optional
+            Version of the schema, by default None
+        metadata : dict, optional
+            Metadata dictionary for the job; serialised to JSON before sending, by default None
+        libraries : list, optional
+            List of library names, by default None
+        is_pruned : bool, optional
+            Whether the job is pruned, by default None
+        ligo_only : bool, optional
+            Whether the job is LIGO only, by default None
+        event_id : str, optional
+            Event ID associated with the job, by default None
+        current_history_id : str, optional
+            ID of the current history record, by default None
+        current_history_timestamp : str or datetime, optional
+            Timestamp of the current history record (ISO 8601 or datetime), by default None
+        files : list of dict, optional
+            Files to register; each dict may use snake_case keys (``analysis_uid``,
+            ``file_name``, ``file_size``, ``md5_sum``) or their camelCase equivalents,
+            by default None
+
+        Returns
+        -------
+        GWFlowJobUpsertResult
+            The result of the upsert operation
+        """
+        query = """
+            mutation UpsertGwflowJob($input: UpsertGwflowJobMutationInput!) {
+                upsertGwflowJob(input: $input) {
+                    result {
+                        gwflowJobId
+                        sname
+                        created
+                        filesPending { id sname analysisUid path fileName md5Sum }
+                    }
+                }
+            }
+        """
+
+        params = {"sname": sname}
+        if schema_version is not None:
+            params["schemaVersion"] = schema_version
+        if metadata is not None:
+            params["metadata"] = json.dumps(metadata)
+        if libraries is not None:
+            params["libraries"] = libraries
+        if is_pruned is not None:
+            params["isPruned"] = is_pruned
+        if ligo_only is not None:
+            params["ligoOnly"] = ligo_only
+        if event_id is not None:
+            params["eventId"] = event_id
+        if current_history_id is not None:
+            params["currentHistoryId"] = current_history_id
+        if current_history_timestamp is not None:
+            if hasattr(current_history_timestamp, 'isoformat'):
+                params["currentHistoryTimestamp"] = current_history_timestamp.isoformat()
+            else:
+                params["currentHistoryTimestamp"] = current_history_timestamp
+        if files is not None:
+            params["files"] = self._format_gwflow_files(files)
+
+        variables = {"input": {"params": params}}
+        data = self.request(query=query, variables=variables)
+        result_data = data['upsert_gwflow_job']['result']
+
+        files_pending = [GWFlowPendingFile.from_dict(f) for f in (result_data.get('files_pending') or [])]
+
+        return GWFlowJobUpsertResult(
+            job_id=result_data['gwflow_job_id'],
+            sname=result_data['sname'],
+            created=result_data['created'],
+            files_pending=files_pending
+        )
+
+    def upload_gwflow_file(self, gwflow_file_id: str, file_path) -> int:
+        """
+        Upload a file for a GWFlow job.
+
+        Parameters
+        ----------
+        gwflow_file_id : str
+            Relay global ID of the GWFlow file to upload
+        file_path : str or Path
+            Local path to the file to upload
+
+        Returns
+        -------
+        int
+            Size of the uploaded file
+        """
+        query = """
+            mutation UploadGwflowFile($input: UploadGwflowFileMutationInput!) {
+                uploadGwflowFile(input: $input) {
+                    result { success fileSize }
+                }
+            }
+        """
+        file_path = check_file(file_path)
+        with open(file_path, 'rb') as f:
+            variables = {
+                "input": {
+                    "gwflowFileId": gwflow_file_id,
+                    "file": f
+                }
+            }
+            data = self.request(query=query, variables=variables)
+
+        result = data['upload_gwflow_file']['result']
+        if not result['success']:
+            raise Exception("Failed to upload GWFlow file.")
+        return int(result['file_size'])
+
+    def get_gwflow_pending_files(self) -> 'list[GWFlowPendingFile]':
+        """
+        Get all not-yet-mirrored GWFlow files.
+
+        Returns
+        -------
+        list
+            List of pending GWFlow files
+        """
+        query = """
+            query {
+                gwflowPendingFiles { id sname analysisUid path fileName md5Sum }
+            }
+        """
+        data = self.request(query=query)
+        return [GWFlowPendingFile.from_dict(f) for f in data.get('gwflow_pending_files', [])]
+
+    def link_bilby_job_to_gwflow(self, job_id: str, sname: str, analysis_uid: str) -> None:
+        """Link a Bilby job to a GWFlow analysis.
+
+        Parameters
+        ----------
+        job_id : str
+            Relay global ID of the BilbyJob
+        sname : str
+            Super-name of the GWFlow job to link to. Pass an empty string ``""`` to
+            unlink the Bilby job from its current GWFlow analysis.
+        analysis_uid : str
+            Unique identifier of the analysis
+        """
+        query = """
+            mutation LinkBilbyJobToGwflow($input: LinkBilbyJobToGwflowMutationInput!) {
+                linkBilbyJobToGwflow(input: $input) {
+                    result { success }
+                }
+            }
+        """
+        variables = {
+            "input": {
+                "jobId": job_id,
+                "sname": sname,
+                "analysisUid": analysis_uid
+            }
+        }
+        data = self.request(query=query, variables=variables)
+        if not data['link_bilby_job_to_gwflow']['result']['success']:
+            raise Exception("Failed to link Bilby job to GWFlow.")
