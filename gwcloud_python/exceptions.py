@@ -2,6 +2,10 @@ import functools
 from gwdc_python.exceptions import GWDCAuthenticationError
 
 
+class GWCloudException(Exception):
+    pass
+
+
 class ExternalFileDownloadException(Exception):
     def __init(self, file_path):
         super().__init__(
