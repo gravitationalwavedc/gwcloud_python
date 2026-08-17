@@ -49,3 +49,14 @@ To upsert a GWFlow job record and upload its pending files::
     # Upload each pending file
     for pending_file in result.files_pending:
         gwc.upload_gwflow_file(pending_file.id, f"/local/path/{pending_file.file_name}")
+
+To list GWFlow jobs, fetch a job by its super-name, and download one of its files::
+
+    from gwcloud_python import GWCloud
+
+    gwc = GWCloud(api_token="<your-token>", endpoint="<endpoint>")
+
+    jobs = gwc.get_gwflow_job_list(search="S230101a", time_range="all", include_pruned=False)
+    job = gwc.get_gwflow_job(sname="S230101a")
+    if job is not None and job.files:
+        gwc.download_gwflow_file(job.files[0].download_token, "/local/path/file.h5")

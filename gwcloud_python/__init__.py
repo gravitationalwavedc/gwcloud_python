@@ -6,7 +6,16 @@ from gwdc_python.files import FileReference, FileReferenceList
 from gwdc_python.helpers import TimeRange, Cluster, JobStatus
 
 
-from .gwflow import GWFlowPendingFile, GWFlowJobUpsertResult
+from .gwflow import (
+    GWFlowPendingFile,
+    GWFlowJobUpsertResult,
+    GWFlowJob,
+    GWFlowFile,
+    GWFlowLinkedBilbyJob,
+    GWFlowEventID,
+)
+
+from .exceptions import GWCloudException
 
 try:
     from importlib.metadata import version

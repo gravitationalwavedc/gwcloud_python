@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 import itertools
 
+import requests
 from gwdc_python import GWDC
 from gwdc_python.files import FileReference, FileReferenceList
 from gwdc_python.helpers import TimeRange, Cluster
@@ -14,11 +15,15 @@ from gwdc_python.logger import create_logger
 
 from .bilby_job import BilbyJob
 from .event_id import EventID
-from .exceptions import custom_error_handler
-from .gwflow import GWFlowPendingFile, GWFlowJobUpsertResult
+from .exceptions import custom_error_handler, GWCloudException
+from .gwflow import GWFlowPendingFile, GWFlowJobUpsertResult, GWFlowJob
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 from .utils.file_upload import check_file
-from .settings import GWCLOUD_ENDPOINT
+from .settings import (
+    GWCLOUD_ENDPOINT,
+    GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT,
+    GWCLOUD_FILE_DOWNLOAD_TIMEOUT,
+)
 
 logger = create_logger(__name__)
 
@@ -1083,3 +1088,124 @@ class GWCloud:
         data = self.request(query=query, variables=variables)
         if not data['link_bilby_job_to_gwflow']['result']['success']:
             raise Exception("Failed to link Bilby job to GWFlow.")
+
+    def get_gwflow_job_list(self, search="", time_range="all", include_pruned=False) -> 'list[GWFlowJob]':
+        """Get a list of GWFlow jobs, paging through all results
+
+        Parameters
+        ----------
+        search : str, optional
+            Search terms by which to filter the job list, by default ""
+        time_range : str, optional
+            Time range by which to filter the job list, by default "all"
+        include_pruned : bool, optional
+            Whether to include pruned jobs in the results, by default False
+
+        Returns
+        -------
+        list
+            List of GWFlowJob instances for the jobs matching the search terms
+        """
+        query = """
+            query GwflowJobs($search: String, $timeRange: String, $includePruned: Boolean,
+                             $cursor: ID, $count: Int) {
+                gwflowJobs(search: $search, timeRange: $timeRange,
+                           includePruned: $includePruned, cursor: $cursor, count: $count) {
+                    edges { node { id sname schemaVersion libraries isPruned ligoOnly
+                                   currentHistoryId currentHistoryTimestamp lastUpdated
+                                   eventId { eventId triggerId nickname gpsTime } }
+                          cursor }
+                    pageInfo { hasNextPage endCursor }
+                }
+            }
+        """
+
+        jobs = []
+        cursor = None
+        count = 100
+        while True:
+            variables = {
+                "search": search,
+                "timeRange": time_range,
+                "includePruned": include_pruned,
+                "count": count
+            }
+            if cursor is not None:
+                variables["cursor"] = cursor
+
+            data = self.request(query=query, variables=variables)
+            gwflow_jobs = data['gwflow_jobs']
+            jobs.extend(GWFlowJob.from_dict(edge['node']) for edge in gwflow_jobs['edges'])
+            page_info = gwflow_jobs['page_info']
+            if not page_info['has_next_page']:
+                break
+            end_cursor = page_info['end_cursor']
+            if end_cursor is None or end_cursor == cursor:
+                break
+            cursor = end_cursor
+
+        return jobs
+
+    def get_gwflow_job(self, sname) -> 'GWFlowJob | None':
+        """Get a GWFlow job instance corresponding to a specific super-name (sname)
+
+        Parameters
+        ----------
+        sname : str
+            Super-name of the job to obtain
+
+        Returns
+        -------
+        GWFlowJob or None
+            GWFlowJob instance corresponding to the input sname, or None if no such job exists
+        """
+        query = """
+            query GwflowJobBySname($sname: String!) {
+                gwflowJobBySname(sname: $sname) {
+                    id sname schemaVersion libraries isPruned ligoOnly currentHistoryId
+                    currentHistoryTimestamp creationTime lastUpdated
+                    eventId { eventId triggerId nickname gpsTime }
+                    files { id analysisUid path fileName fileSize uploaded downloadToken }
+                    bilbyJobs { id name gwflowAnalysisUid }
+                }
+            }
+        """
+
+        variables = {
+            "sname": sname
+        }
+
+        data = self.request(query=query, variables=variables)
+
+        if not data['gwflow_job_by_sname']:
+            return None
+
+        return GWFlowJob.from_dict(data['gwflow_job_by_sname'])
+
+    def download_gwflow_file(self, download_token: str, output_path) -> None:
+        """Download a GWFlow file to a local path
+
+        Parameters
+        ----------
+        download_token : str
+            Download token for the file to download
+        output_path : str or Path
+            Local path to which to save the file
+        """
+        download_url = GWCLOUD_UPLOADED_JOB_FILE_DOWNLOAD_ENDPOINT + download_token
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with requests.get(download_url, stream=True, timeout=GWCLOUD_FILE_DOWNLOAD_TIMEOUT) as request:
+            if request.status_code == 404:
+                raise GWCloudException(
+                    "File not found or not available for download (404). "
+                    "It may be a ligo_only record or a not-yet-mirrored file."
+                )
+            if request.status_code != 200:
+                raise GWCloudException(
+                    f"Failed to download GWFlow file: HTTP {request.status_code}."
+                )
+            with output_path.open("wb") as f:
+                for chunk in request.iter_content(chunk_size=1024 * 16):
+                    f.write(chunk)
