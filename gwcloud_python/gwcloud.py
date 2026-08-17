@@ -1123,13 +1123,13 @@ class GWCloud:
         jobs = []
         cursor = None
         count = 100
+        variables = {
+            "search": search,
+            "timeRange": time_range,
+            "includePruned": include_pruned,
+            "count": count
+        }
         while True:
-            variables = {
-                "search": search,
-                "timeRange": time_range,
-                "includePruned": include_pruned,
-                "count": count
-            }
             if cursor is not None:
                 variables["cursor"] = cursor
 
