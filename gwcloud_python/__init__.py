@@ -6,6 +6,8 @@ from gwdc_python.files import FileReference, FileReferenceList
 from gwdc_python.helpers import TimeRange, Cluster, JobStatus
 
 
+from .gwflow import GWFlowPendingFile, GWFlowJobUpsertResult
+
 try:
     from importlib.metadata import version
 except ModuleNotFoundError:

@@ -28,3 +28,24 @@ Example
 
     100%|██████████████████████████████████████| 3.76M/3.76M [00:00<00:00, 5.20MB/s]
     All 2 files saved!
+
+
+GWFlow
+------
+
+To upsert a GWFlow job record and upload its pending files::
+
+    from gwcloud_python import GWCloud
+
+    gwc = GWCloud(api_token="<your-token>", endpoint="<endpoint>")
+
+    # Upsert a job (idempotent — creates or updates by sname)
+    result = gwc.upsert_gwflow_job(
+        sname="S230101a",
+        metadata={"key": "value"},
+        files=[{"path": "/frames/H1.gwf", "file_name": "H1.gwf", "analysis_uid": "uid-001"}],
+    )
+
+    # Upload each pending file
+    for pending_file in result.files_pending:
+        gwc.upload_gwflow_file(pending_file.id, f"/local/path/{pending_file.file_name}")
