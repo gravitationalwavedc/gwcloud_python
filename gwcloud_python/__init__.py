@@ -6,14 +6,12 @@ from gwdc_python.files import FileReference, FileReferenceList
 from gwdc_python.helpers import TimeRange, Cluster, JobStatus
 
 
-from .gwflow import (
-    GWFlowPendingFile,
-    GWFlowJobUpsertResult,
-    GWFlowJob,
-    GWFlowFile,
-    GWFlowLinkedBilbyJob,
-    GWFlowEventID,
-)
+from .gwflow_pending_file import GWFlowPendingFile
+from .gwflow_job_upsert_result import GWFlowJobUpsertResult
+from .gwflow_job import GWFlowJob
+from .gwflow_file import GWFlowFile
+from .gwflow_linked_bilby_job import GWFlowLinkedBilbyJob
+from .gwflow_event_id import GWFlowEventID
 
 from .exceptions import GWCloudException
 

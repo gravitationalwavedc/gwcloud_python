@@ -16,7 +16,9 @@ from gwdc_python.logger import create_logger
 from .bilby_job import BilbyJob
 from .event_id import EventID
 from .exceptions import custom_error_handler, GWCloudException
-from .gwflow import GWFlowPendingFile, GWFlowJobUpsertResult, GWFlowJob
+from .gwflow_pending_file import GWFlowPendingFile
+from .gwflow_job_upsert_result import GWFlowJobUpsertResult
+from .gwflow_job import GWFlowJob
 from .utils.file_download import _download_files, _save_file_map_fn, _get_file_map_fn
 from .utils.file_upload import check_file
 from .settings import (
