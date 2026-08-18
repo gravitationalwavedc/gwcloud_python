@@ -60,3 +60,10 @@ To list GWFlow jobs, fetch a job by its super-name, and download one of its file
     job = gwc.get_gwflow_job(sname="S230101a")
     if job is not None and job.files:
         gwc.download_gwflow_file(job.files[0].download_token, "/local/path/file.h5")
+
+Other GWFlow methods include:
+
+- ``get_gwflow_pending_files`` — get all GWFlow files that have not yet been mirrored.
+- ``link_bilby_job_to_gwflow`` — link a Bilby job to a GWFlow analysis.
+
+See the `GWFlow guide <https://gwcloud-python.readthedocs.io/en/latest/usage/gwflow.html>`_ in the documentation for more details.
