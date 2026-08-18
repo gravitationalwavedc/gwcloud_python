@@ -6,8 +6,12 @@ from tempfile import NamedTemporaryFile
 
 from gwcloud_python import GWCloud
 from gwcloud_python.exceptions import GWCloudException
-from gwcloud_python.gwflow import GWFlowPendingFile, GWFlowJobUpsertResult, GWFlowJob, GWFlowFile
-from gwcloud_python.gwflow import GWFlowLinkedBilbyJob, GWFlowEventID
+from gwcloud_python.gwflow_pending_file import GWFlowPendingFile
+from gwcloud_python.gwflow_job_upsert_result import GWFlowJobUpsertResult
+from gwcloud_python.gwflow_job import GWFlowJob
+from gwcloud_python.gwflow_file import GWFlowFile
+from gwcloud_python.gwflow_linked_bilby_job import GWFlowLinkedBilbyJob
+from gwcloud_python.gwflow_event_id import GWFlowEventID
 
 @pytest.fixture
 def mock_gwdc_init(mocker):
@@ -480,3 +484,112 @@ def test_download_gwflow_file_server_error(mock_gwdc_init, mocker, requests_mock
 
     with pytest.raises(GWCloudException, match="500"):
         gwc.download_gwflow_file('token123', tmp_path / 'downloaded.txt')
+
+
+def test_gwflow_job_fresh_list_defaults():
+    job1 = GWFlowJob(
+        id='job1',
+        sname='S230101a',
+        schema_version='1.0',
+        libraries='lib1',
+        is_pruned=True,
+        ligo_only=True,
+        current_history_id='h1',
+        current_history_timestamp='2023-01-01T00:00:00',
+        last_updated='2023-01-01T00:00:00'
+    )
+    job2 = GWFlowJob(
+        id='job2',
+        sname='S230102a',
+        schema_version='1.0',
+        libraries='lib2',
+        is_pruned=False,
+        ligo_only=False,
+        current_history_id='h2',
+        current_history_timestamp='2023-01-02T00:00:00',
+        last_updated='2023-01-02T00:00:00'
+    )
+    assert job1.files is not job2.files
+    assert job1.bilby_jobs is not job2.bilby_jobs
+    assert job1.files == []
+    assert job1.bilby_jobs == []
+
+
+def test_gwflow_job_dataclass_equality():
+    job1 = GWFlowJob(
+        id='job1',
+        sname='S230101a',
+        schema_version='1.0',
+        libraries='lib1',
+        is_pruned=True,
+        ligo_only=True,
+        current_history_id='h1',
+        current_history_timestamp='2023-01-01T00:00:00',
+        last_updated='2023-01-01T00:00:00'
+    )
+    job2 = GWFlowJob(
+        id='job1',
+        sname='S230101a',
+        schema_version='1.0',
+        libraries='lib1',
+        is_pruned=True,
+        ligo_only=True,
+        current_history_id='h1',
+        current_history_timestamp='2023-01-01T00:00:00',
+        last_updated='2023-01-01T00:00:00'
+    )
+    job3 = GWFlowJob(
+        id='job3',
+        sname='S230101a',
+        schema_version='1.0',
+        libraries='lib1',
+        is_pruned=True,
+        ligo_only=True,
+        current_history_id='h1',
+        current_history_timestamp='2023-01-01T00:00:00',
+        last_updated='2023-01-01T00:00:00'
+    )
+    assert job1 == job2
+    assert job1 != job3
+
+
+def test_gwflow_file_from_dict_zero_size():
+    f = GWFlowFile.from_dict({
+        'id': 'f1',
+        'analysisUid': 'uid1',
+        'path': '/p',
+        'fileName': 'a.txt',
+        'fileSize': 0,
+        'uploaded': True,
+        'downloadToken': 'tok1'
+    })
+    assert f.file_size == 0
+
+
+def test_gwflow_event_id_from_dict_zero_gps_time():
+    e = GWFlowEventID.from_dict({
+        'eventId': 'evt1',
+        'triggerId': 'trig1',
+        'nickname': 'nick1',
+        'gpsTime': 0.0
+    })
+    assert e.gps_time == 0.0
+
+
+def test_gwflow_job_from_dict_defaults():
+    job = GWFlowJob.from_dict({
+        'id': 'job1',
+        'sname': 'S230101a',
+        'schema_version': '1.0',
+        'libraries': 'lib1',
+        'is_pruned': True,
+        'ligo_only': True,
+        'current_history_id': 'h1',
+        'current_history_timestamp': '2023-01-01T00:00:00',
+        'last_updated': '2023-01-01T00:00:00',
+        'event_id': None
+    })
+    assert job.files == []
+    assert job.bilby_jobs == []
+    assert job.creation_time is None
+    assert job.event_id is None
