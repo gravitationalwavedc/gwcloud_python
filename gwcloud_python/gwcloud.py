@@ -258,7 +258,6 @@ class GWCloud:
                                 eventId
                                 triggerId
                                 nickname
-                                isLigoEvent
                             }
                         }
                     }
@@ -308,7 +307,6 @@ class GWCloud:
                         eventId
                         triggerId
                         nickname
-                        isLigoEvent
                     }
                 }
             }
@@ -357,7 +355,6 @@ class GWCloud:
                                 eventId
                                 triggerId
                                 nickname
-                                isLigoEvent
                             }
                         }
                     }
@@ -708,7 +705,7 @@ class GWCloud:
         job_id = data['upload_hdf5_bilby_job']['result']['job_id']
         return self.get_job_by_id(job_id)
 
-    def create_event_id(self, event_id, gps_time, trigger_id=None, nickname=None, is_ligo_event=False):
+    def create_event_id(self, event_id, gps_time, trigger_id=None, nickname=None):
         """Create an Event ID that can be assigned to Bilby Jobs
 
         **INFO**:
@@ -724,8 +721,6 @@ class GWCloud:
             Trigger ID of the event, must be of the form S123456a, by default None
         nickname : str, optional
             Common name used to identify the event, by default None
-        is_ligo_event : bool, optional
-            Should the event be visible to ligo users only, by default False
 
         Returns
         -------
@@ -744,7 +739,6 @@ class GWCloud:
                 "eventId": event_id,
                 "triggerId": trigger_id,
                 "nickname": nickname,
-                "isLigoEvent": is_ligo_event,
                 "gpsTime": gps_time,
             }
         }
@@ -752,7 +746,7 @@ class GWCloud:
         logger.info(data['create_event_id']['result'])
         return self.get_event_id(event_id=event_id)
 
-    def update_event_id(self, event_id, gps_time=None, trigger_id=None, nickname=None, is_ligo_event=None):
+    def update_event_id(self, event_id, gps_time=None, trigger_id=None, nickname=None):
         """Create an Event ID that can be assigned to Bilby Jobs
 
         **INFO**:
@@ -768,8 +762,6 @@ class GWCloud:
             Trigger ID of the event, must be of the form S123456a, by default None
         nickname : str, optional
             Common name used to identify the event, by default None
-        is_ligo_event : bool, optional
-            Should the event be visible to ligo users only, by default None
 
         Returns
         -------
@@ -788,7 +780,6 @@ class GWCloud:
                 "eventId": event_id,
                 "triggerId": trigger_id,
                 "nickname": nickname,
-                "isLigoEvent": is_ligo_event,
                 "gpsTime": gps_time,
             }
         }
@@ -841,7 +832,6 @@ class GWCloud:
                     eventId
                     triggerId
                     nickname
-                    isLigoEvent
                     gpsTime
                 }
             }
@@ -874,7 +864,6 @@ class GWCloud:
                     eventId
                     triggerId
                     nickname
-                    isLigoEvent
                     gpsTime
                 }
             }
@@ -920,7 +909,7 @@ class GWCloud:
 
     def upsert_gwflow_job(
         self, sname, *, schema_version=None, metadata=None,
-        libraries=None, is_pruned=None, ligo_only=None,
+        libraries=None, is_pruned=None,
         event_id=None, current_history_id=None,
         current_history_timestamp=None, files=None
     ) -> 'GWFlowJobUpsertResult':
@@ -938,8 +927,6 @@ class GWCloud:
             List of library names, by default None
         is_pruned : bool, optional
             Whether the job is pruned, by default None
-        ligo_only : bool, optional
-            Whether the job is LIGO only, by default None
         event_id : str, optional
             Event ID associated with the job, by default None
         current_history_id : str, optional
@@ -978,8 +965,6 @@ class GWCloud:
             params["libraries"] = libraries
         if is_pruned is not None:
             params["isPruned"] = is_pruned
-        if ligo_only is not None:
-            params["ligoOnly"] = ligo_only
         if event_id is not None:
             params["eventId"] = event_id
         if current_history_id is not None:
@@ -1113,7 +1098,7 @@ class GWCloud:
                              $cursor: ID, $count: Int) {
                 gwflowJobs(search: $search, timeRange: $timeRange,
                            includePruned: $includePruned, cursor: $cursor, count: $count) {
-                    edges { node { id sname schemaVersion libraries isPruned ligoOnly
+                    edges { node { id sname schemaVersion libraries isPruned
                                    currentHistoryId currentHistoryTimestamp lastUpdated
                                    eventId { eventId triggerId nickname gpsTime } }
                           cursor }
@@ -1164,7 +1149,7 @@ class GWCloud:
         query = """
             query GwflowJobBySname($sname: String!) {
                 gwflowJobBySname(sname: $sname) {
-                    id sname schemaVersion libraries isPruned ligoOnly currentHistoryId
+                    id sname schemaVersion libraries isPruned currentHistoryId
                     currentHistoryTimestamp creationTime lastUpdated
                     eventId { eventId triggerId nickname gpsTime }
                     files { id analysisUid path fileName fileSize uploaded downloadToken }
@@ -1202,7 +1187,7 @@ class GWCloud:
             if request.status_code == 404:
                 raise GWCloudException(
                     "File not found or not available for download (404). "
-                    "It may be a ligo_only record or a not-yet-mirrored file."
+                    "It may be restricted or not yet mirrored."
                 )
             if request.status_code != 200:
                 raise GWCloudException(

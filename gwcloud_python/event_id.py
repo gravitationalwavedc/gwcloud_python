@@ -7,5 +7,4 @@ class EventID:
     event_id: str
     trigger_id: str = None
     nickname: str = None
-    is_ligo_event: bool = False
     gps_time: float = None

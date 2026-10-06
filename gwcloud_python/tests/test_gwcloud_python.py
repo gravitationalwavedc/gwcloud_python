@@ -1,4 +1,8 @@
+import dataclasses
+import inspect
 import os
+import re
+
 import pytest
 from tempfile import NamedTemporaryFile, TemporaryFile
 
@@ -474,3 +478,239 @@ def test_upload_hdf5_job_private(setup_mock_gwdc, mock_bilby_job, mocker):
         # Clean up temporary files
         os.unlink(hdf5_path)
         os.unlink(ini_path)
+
+
+
+def _normalize(query: str) -> str:
+    return re.sub(r"\s+", " ", query).strip()
+
+
+def _event_payload():
+    return {
+        "event_id": "GW123456_123456",
+        "trigger_id": "S123456a",
+        "nickname": "test",
+        "gps_time": 1126259462.391,
+    }
+
+
+def _bilby_payload():
+    return {
+        "id": "job-id",
+        "name": "job",
+        "description": "description",
+        "user": "user",
+        "event_id": _event_payload(),
+        "job_status": {"name": "Completed", "date": "2021-01-01"},
+    }
+
+
+def test_event_id_exact_public_fields_and_construction():
+    payload = _event_payload()
+
+    assert [field.name for field in dataclasses.fields(EventID)] == [
+        "event_id", "trigger_id", "nickname", "gps_time",
+    ]
+    assert EventID(**payload) == EventID(
+        event_id="GW123456_123456",
+        trigger_id="S123456a",
+        nickname="test",
+        gps_time=1126259462.391,
+    )
+
+
+def test_event_method_exact_signatures():
+    assert list(inspect.signature(GWCloud.create_event_id).parameters) == [
+        "self", "event_id", "gps_time", "trigger_id", "nickname",
+    ]
+    assert list(inspect.signature(GWCloud.update_event_id).parameters) == [
+        "self", "event_id", "gps_time", "trigger_id", "nickname",
+    ]
+
+
+def test_public_bilby_jobs_exact_query(mock_gwdc_init, mocker):
+    expected_query = """
+        query ($search: String, $timeRange: String, $first: Int){
+            publicBilbyJobs (search: $search, timeRange: $timeRange, first: $first) {
+                edges {
+                    node {
+                        id
+                        user
+                        name
+                        description
+                        jobStatus {
+                            name
+                            date
+                        }
+                        eventId {
+                            eventId
+                            triggerId
+                            nickname
+                        }
+                    }
+                }
+            }
+        }
+    """
+    mock_request = mocker.Mock(
+        return_value={"public_bilby_jobs": {"edges": [{"node": _bilby_payload()}]}}
+    )
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+
+    GWCloud(token="my_token").get_public_job_list()
+
+    assert _normalize(mock_request.call_args.kwargs["query"]) == _normalize(expected_query)
+
+
+def test_bilby_job_detail_exact_query(mock_gwdc_init, mocker):
+    expected_query = """
+        query ($id: ID!){
+            bilbyJob (id: $id) {
+                id
+                name
+                user
+                description
+                jobStatus {
+                    name
+                    date
+                }
+                eventId {
+                    eventId
+                    triggerId
+                    nickname
+                }
+            }
+        }
+    """
+    mock_request = mocker.Mock(return_value={"bilby_job": _bilby_payload()})
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+
+    GWCloud(token="my_token").get_job_by_id("job-id")
+
+    assert _normalize(mock_request.call_args.kwargs["query"]) == _normalize(expected_query)
+
+
+def test_user_bilby_jobs_exact_query(mock_gwdc_init, mocker):
+    expected_query = """
+        query ($first: Int){
+            bilbyJobs (first: $first){
+                edges {
+                    node {
+                        id
+                        name
+                        user
+                        description
+                        jobStatus {
+                            name
+                            date
+                        }
+                        eventId {
+                            eventId
+                            triggerId
+                            nickname
+                        }
+                    }
+                }
+            }
+        }
+    """
+    mock_request = mocker.Mock(
+        return_value={"bilby_jobs": {"edges": [{"node": _bilby_payload()}]}}
+    )
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+
+    GWCloud(token="my_token").get_user_jobs()
+
+    assert _normalize(mock_request.call_args.kwargs["query"]) == _normalize(expected_query)
+
+
+def test_create_event_id_exact_variables_and_detail_query(mock_gwdc_init, mocker):
+    expected_query = """
+        query ($eventId: String!){
+            eventId (eventId: $eventId) {
+                eventId
+                triggerId
+                nickname
+                gpsTime
+            }
+        }
+    """
+    payload = _event_payload()
+    mock_request = mocker.Mock(side_effect=[
+        {"create_event_id": {"result": "created"}},
+        {"event_id": payload},
+    ])
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+
+    event = GWCloud(token="my_token").create_event_id(
+        payload["event_id"],
+        payload["gps_time"],
+        trigger_id=payload["trigger_id"],
+        nickname=payload["nickname"],
+    )
+
+    mutation_call, detail_call = mock_request.call_args_list
+    assert mutation_call.kwargs["variables"] == {
+        "input": {
+            "eventId": "GW123456_123456",
+            "triggerId": "S123456a",
+            "nickname": "test",
+            "gpsTime": 1126259462.391,
+        }
+    }
+    assert _normalize(detail_call.kwargs["query"]) == _normalize(expected_query)
+    assert event == EventID(**payload)
+
+
+def test_update_event_id_exact_variables_and_detail_query(mock_gwdc_init, mocker):
+    expected_query = """
+        query ($eventId: String!){
+            eventId (eventId: $eventId) {
+                eventId
+                triggerId
+                nickname
+                gpsTime
+            }
+        }
+    """
+    payload = _event_payload()
+    mock_request = mocker.Mock(side_effect=[
+        {"update_event_id": {"result": "updated"}},
+        {"event_id": payload},
+    ])
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+
+    GWCloud(token="my_token").update_event_id(payload["event_id"], nickname="updated")
+
+    mutation_call, detail_call = mock_request.call_args_list
+    assert mutation_call.kwargs["variables"] == {
+        "input": {
+            "eventId": "GW123456_123456",
+            "triggerId": None,
+            "nickname": "updated",
+            "gpsTime": None,
+        }
+    }
+    assert mutation_call.kwargs["variables"]["input"]["gpsTime"] is None
+    assert _normalize(detail_call.kwargs["query"]) == _normalize(expected_query)
+
+
+def test_all_event_ids_exact_query(mock_gwdc_init, mocker):
+    expected_query = """
+        query {
+            allEventIds {
+                eventId
+                triggerId
+                nickname
+                gpsTime
+            }
+        }
+    """
+    payload = _event_payload()
+    mock_request = mocker.Mock(return_value={"all_event_ids": [payload]})
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+
+    events = GWCloud(token="my_token").get_all_event_ids()
+
+    assert events == [EventID(**payload)]
+    assert _normalize(mock_request.call_args.kwargs["query"]) == _normalize(expected_query)
