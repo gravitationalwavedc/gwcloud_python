@@ -1,5 +1,9 @@
+import dataclasses
+import inspect
 import os
 import json
+import re
+
 import pytest
 from datetime import datetime
 from tempfile import NamedTemporaryFile
@@ -583,31 +587,49 @@ def test_gwflow_job_from_dict_defaults():
     assert job.event_id is None
 
 
-def _removed_job_name():
-    return "ligo_" + "only"
+
+def _normalize(query: str) -> str:
+    return re.sub(r"\s+", " ", query).strip()
 
 
-def _removed_job_graphql_name():
-    return "ligo" + "Only"
-
-
-def test_gwflow_job_field_free_model_shape():
-    job = GWFlowJob.from_dict({
+def test_gwflow_job_exact_public_fields_and_construction():
+    payload = {
         "id": "job1",
         "sname": "S230101a",
-        "schemaVersion": "1.0",
+        "schema_version": "1.0",
         "libraries": ["lib1"],
-        "isPruned": False,
-        "currentHistoryId": "h1",
-        "currentHistoryTimestamp": "2023-01-01T00:00:00",
-        "lastUpdated": "2023-01-01T00:00:00",
-    })
+        "is_pruned": False,
+        "current_history_id": "h1",
+        "current_history_timestamp": "2023-01-01T00:00:00",
+        "last_updated": "2023-01-01T00:00:00",
+    }
 
-    assert job.sname == "S230101a"
-    assert not hasattr(job, _removed_job_name())
+    assert [field.name for field in dataclasses.fields(GWFlowJob)] == [
+        "id", "sname", "schema_version", "libraries", "is_pruned",
+        "current_history_id", "current_history_timestamp", "last_updated",
+        "creation_time", "event_id", "files", "bilby_jobs",
+    ]
+    assert GWFlowJob(**payload) == GWFlowJob(
+        id="job1",
+        sname="S230101a",
+        schema_version="1.0",
+        libraries=["lib1"],
+        is_pruned=False,
+        current_history_id="h1",
+        current_history_timestamp="2023-01-01T00:00:00",
+        last_updated="2023-01-01T00:00:00",
+    )
 
 
-def test_upsert_gwflow_job_excludes_removed_parameter(mock_gwdc_init, mocker):
+def test_upsert_gwflow_job_exact_signature():
+    assert list(inspect.signature(GWCloud.upsert_gwflow_job).parameters) == [
+        "self", "sname", "schema_version", "metadata", "libraries",
+        "is_pruned", "event_id", "current_history_id",
+        "current_history_timestamp", "files",
+    ]
+
+
+def test_upsert_gwflow_job_exact_variables(mock_gwdc_init, mocker):
     mock_request = mocker.Mock(return_value={
         "upsert_gwflow_job": {
             "result": {
@@ -619,22 +641,63 @@ def test_upsert_gwflow_job_excludes_removed_parameter(mock_gwdc_init, mocker):
         }
     })
     mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
-    gwc = GWCloud(token="my_token")
+    timestamp = datetime(2023, 1, 1, 12, 0, 0)
 
-    gwc.upsert_gwflow_job("S230101a", is_pruned=False)
+    GWCloud(token="my_token").upsert_gwflow_job(
+        "S230101a",
+        schema_version="1.0",
+        metadata={"key": "value"},
+        libraries=["lib1"],
+        is_pruned=False,
+        event_id="GW123",
+        current_history_id="hist1",
+        current_history_timestamp=timestamp,
+        files=[{
+            "analysis_uid": "uid1",
+            "path": "/p",
+            "file_name": "f.txt",
+            "file_size": 0,
+            "md5_sum": "abc",
+        }],
+    )
 
-    params = mock_request.call_args.kwargs["variables"]["input"]["params"]
-    assert _removed_job_graphql_name() not in params
+    assert mock_request.call_args.kwargs["variables"] == {
+        "input": {
+            "params": {
+                "sname": "S230101a",
+                "schemaVersion": "1.0",
+                "metadata": json.dumps({"key": "value"}),
+                "libraries": ["lib1"],
+                "isPruned": False,
+                "eventId": "GW123",
+                "currentHistoryId": "hist1",
+                "currentHistoryTimestamp": timestamp.isoformat(),
+                "files": [{
+                    "analysisUid": "uid1",
+                    "path": "/p",
+                    "fileName": "f.txt",
+                    "fileSize": 0,
+                    "md5Sum": "abc",
+                }],
+            }
+        }
+    }
 
 
-def test_removed_gwflow_keyword_raises_type_error(mock_gwdc_init):
-    gwc = GWCloud(token="my_token")
-
-    with pytest.raises(TypeError):
-        gwc.upsert_gwflow_job("S230101a", **{_removed_job_name(): True})
-
-
-def test_get_gwflow_job_list_query_excludes_removed_field(mock_gwdc_init, mocker):
+def test_get_gwflow_job_list_exact_query(mock_gwdc_init, mocker):
+    expected_query = """
+        query GwflowJobs($search: String, $timeRange: String, $includePruned: Boolean,
+                         $cursor: ID, $count: Int) {
+            gwflowJobs(search: $search, timeRange: $timeRange,
+                       includePruned: $includePruned, cursor: $cursor, count: $count) {
+                edges { node { id sname schemaVersion libraries isPruned
+                               currentHistoryId currentHistoryTimestamp lastUpdated
+                               eventId { eventId triggerId nickname gpsTime } }
+                      cursor }
+                pageInfo { hasNextPage endCursor }
+            }
+        }
+    """
     mock_request = mocker.Mock(return_value={
         "gwflow_jobs": {
             "edges": [],
@@ -642,20 +705,28 @@ def test_get_gwflow_job_list_query_excludes_removed_field(mock_gwdc_init, mocker
         }
     })
     mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
-    gwc = GWCloud(token="my_token")
 
-    gwc.get_gwflow_job_list()
+    GWCloud(token="my_token").get_gwflow_job_list()
 
-    query = mock_request.call_args.kwargs["query"]
-    assert _removed_job_graphql_name() not in query
+    assert _normalize(mock_request.call_args.kwargs["query"]) == _normalize(expected_query)
 
 
-def test_get_gwflow_job_detail_query_excludes_removed_field(mock_gwdc_init, mocker):
+def test_get_gwflow_job_detail_exact_query(mock_gwdc_init, mocker):
+    expected_query = """
+        query GwflowJobBySname($sname: String!) {
+            gwflowJobBySname(sname: $sname) {
+                id sname schemaVersion libraries isPruned currentHistoryId
+                currentHistoryTimestamp creationTime lastUpdated
+                eventId { eventId triggerId nickname gpsTime }
+                files { id analysisUid path fileName fileSize uploaded downloadToken }
+                bilbyJobs { id name gwflowAnalysisUid }
+            }
+        }
+    """
     mock_request = mocker.Mock(return_value={"gwflow_job_by_sname": None})
     mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
-    gwc = GWCloud(token="my_token")
 
-    gwc.get_gwflow_job("S230101a")
+    result = GWCloud(token="my_token").get_gwflow_job("S230101a")
 
-    query = mock_request.call_args.kwargs["query"]
-    assert _removed_job_graphql_name() not in query
+    assert result is None
+    assert _normalize(mock_request.call_args.kwargs["query"]) == _normalize(expected_query)
