@@ -474,3 +474,135 @@ def test_upload_hdf5_job_private(setup_mock_gwdc, mock_bilby_job, mocker):
         # Clean up temporary files
         os.unlink(hdf5_path)
         os.unlink(ini_path)
+
+
+def _removed_event_name():
+    return "is_" + "ligo_" + "event"
+
+
+def _removed_event_graphql_name():
+    return "is" + "Ligo" + "Event"
+
+
+def _event_payload():
+    return {
+        "event_id": "GW123456_123456",
+        "trigger_id": "S123456a",
+        "nickname": "test",
+        "gps_time": 1126259462.391,
+    }
+
+
+def _bilby_payload():
+    return {
+        "id": "job-id",
+        "name": "job",
+        "description": "description",
+        "user": "user",
+        "event_id": _event_payload(),
+        "job_status": {"name": "Completed", "date": "2021-01-01"},
+    }
+
+
+def test_event_id_field_free_model_shape():
+    event = EventID(**_event_payload())
+
+    assert event.event_id == "GW123456_123456"
+    assert not hasattr(event, _removed_event_name())
+
+
+@pytest.mark.parametrize(
+    ("method_name", "arguments", "response"),
+    [
+        (
+            "get_public_job_list",
+            (),
+            {"public_bilby_jobs": {"edges": [{"node": _bilby_payload()}]}},
+        ),
+        (
+            "get_job_by_id",
+            ("job-id",),
+            {"bilby_job": _bilby_payload()},
+        ),
+        (
+            "get_user_jobs",
+            (),
+            {"bilby_jobs": {"edges": [{"node": _bilby_payload()}]}},
+        ),
+    ],
+)
+def test_bilby_queries_exclude_removed_event_field(
+    mock_gwdc_init, mocker, method_name, arguments, response
+):
+    mock_request = mocker.Mock(return_value=response)
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+    gwc = GWCloud(token="my_token")
+
+    getattr(gwc, method_name)(*arguments)
+
+    assert _removed_event_graphql_name() not in mock_request.call_args.kwargs["query"]
+
+
+def test_create_event_id_request_shape(mock_gwdc_init, mocker):
+    payload = _event_payload()
+    mock_request = mocker.Mock(
+        side_effect=[
+            {"create_event_id": {"result": "created"}},
+            {"event_id": payload},
+        ]
+    )
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+    gwc = GWCloud(token="my_token")
+
+    event = gwc.create_event_id(
+        payload["event_id"],
+        payload["gps_time"],
+        trigger_id=payload["trigger_id"],
+        nickname=payload["nickname"],
+    )
+
+    mutation_call, detail_call = mock_request.call_args_list
+    assert _removed_event_graphql_name() not in mutation_call.kwargs["variables"]["input"]
+    assert _removed_event_graphql_name() not in detail_call.kwargs["query"]
+    assert event == EventID(**payload)
+
+
+def test_update_event_id_preserves_optional_gps_null(mock_gwdc_init, mocker):
+    payload = _event_payload()
+    mock_request = mocker.Mock(
+        side_effect=[
+            {"update_event_id": {"result": "updated"}},
+            {"event_id": payload},
+        ]
+    )
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+    gwc = GWCloud(token="my_token")
+
+    gwc.update_event_id(payload["event_id"], nickname="updated")
+
+    mutation_call, detail_call = mock_request.call_args_list
+    variables = mutation_call.kwargs["variables"]["input"]
+    assert variables["gpsTime"] is None
+    assert _removed_event_graphql_name() not in variables
+    assert _removed_event_graphql_name() not in detail_call.kwargs["query"]
+
+
+def test_all_event_ids_query_excludes_removed_field(mock_gwdc_init, mocker):
+    payload = _event_payload()
+    mock_request = mocker.Mock(return_value={"all_event_ids": [payload]})
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+    gwc = GWCloud(token="my_token")
+
+    events = gwc.get_all_event_ids()
+
+    assert events == [EventID(**payload)]
+    assert _removed_event_graphql_name() not in mock_request.call_args.kwargs["query"]
+
+
+@pytest.mark.parametrize("method_name", ["create_event_id", "update_event_id"])
+def test_removed_event_keyword_raises_type_error(mock_gwdc_init, method_name):
+    gwc = GWCloud(token="my_token")
+    kwargs = {_removed_event_name(): True}
+
+    with pytest.raises(TypeError):
+        getattr(gwc, method_name)("GW123456_123456", **kwargs)

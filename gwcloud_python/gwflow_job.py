@@ -23,8 +23,6 @@ class GWFlowJob:
         Libraries used by the job
     is_pruned : bool
         True if the job has been pruned, False otherwise
-    ligo_only : bool
-        True if the job is LIGO-only, False otherwise
     current_history_id : str
         Global ID of the current history entry
     current_history_timestamp : str
@@ -45,7 +43,6 @@ class GWFlowJob:
     schema_version: str
     libraries: str
     is_pruned: bool
-    ligo_only: bool
     current_history_id: str
     current_history_timestamp: str
     last_updated: str
@@ -63,7 +60,6 @@ class GWFlowJob:
             schema_version=d.get('schemaVersion') or d.get('schema_version'),
             libraries=d.get('libraries'),
             is_pruned=d.get('isPruned') if 'isPruned' in d else d.get('is_pruned'),
-            ligo_only=d.get('ligoOnly') if 'ligoOnly' in d else d.get('ligo_only'),
             current_history_id=d.get('currentHistoryId') or d.get('current_history_id'),
             current_history_timestamp=d.get('currentHistoryTimestamp') or d.get('current_history_timestamp'),
             last_updated=d.get('lastUpdated') or d.get('last_updated'),

@@ -55,7 +55,10 @@ def test_upsert_gwflow_job_full(mock_gwdc_init, mocker):
                 'sname': 'S230101a',
                 'created': False,
                 'files_pending': [
-                    {'id': 'f1', 'sname': 'S230101a', 'analysisUid': 'uid1', 'path': '/p', 'fileName': 'f.txt', 'md5Sum': 'abc'}
+                    {
+                        'id': 'f1', 'sname': 'S230101a', 'analysisUid': 'uid1',
+                        'path': '/p', 'fileName': 'f.txt', 'md5Sum': 'abc'
+                    }
                 ]
             }
         }
@@ -69,7 +72,6 @@ def test_upsert_gwflow_job_full(mock_gwdc_init, mocker):
         metadata={'key': 'value'},
         libraries=['lib1', 'lib2'],
         is_pruned=False,
-        ligo_only=True,
         event_id='GW123',
         current_history_id='hist1',
         current_history_timestamp=dt,
@@ -93,7 +95,6 @@ def test_upsert_gwflow_job_full(mock_gwdc_init, mocker):
     ]
     assert params['libraries'] == ['lib1', 'lib2']
     assert params['isPruned'] is False
-    assert params['ligoOnly'] is True
 
 @pytest.fixture
 def tmp_upload_file():
@@ -229,7 +230,6 @@ def test_get_gwflow_job_list_paginates(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib1'],
                     'is_pruned': False,
-                    'ligo_only': False,
                     'current_history_id': 'h1',
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
@@ -248,7 +248,6 @@ def test_get_gwflow_job_list_paginates(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib2'],
                     'is_pruned': False,
-                    'ligo_only': False,
                     'current_history_id': 'h2',
                     'current_history_timestamp': '2023-01-02T00:00:00',
                     'last_updated': '2023-01-02T00:00:00',
@@ -281,7 +280,6 @@ def test_get_gwflow_job_list_summary_parsing(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib1'],
                     'is_pruned': True,
-                    'ligo_only': True,
                     'current_history_id': 'h1',
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
@@ -293,7 +291,6 @@ def test_get_gwflow_job_list_summary_parsing(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib2'],
                     'is_pruned': False,
-                    'ligo_only': False,
                     'current_history_id': 'h2',
                     'current_history_timestamp': '2023-01-02T00:00:00',
                     'last_updated': '2023-01-02T00:00:00',
@@ -328,7 +325,6 @@ def test_get_gwflow_job_detail(mock_gwdc_init, mocker):
             'schema_version': '1.0',
             'libraries': ['lib1'],
             'is_pruned': False,
-            'ligo_only': False,
             'current_history_id': 'h1',
             'current_history_timestamp': '2023-01-01T00:00:00',
             'creation_time': '2023-01-01T00:00:00',
@@ -405,7 +401,6 @@ def test_get_gwflow_job_list_stops_on_none_cursor(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': [],
                     'is_pruned': False,
-                    'ligo_only': False,
                     'current_history_id': 'h1',
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
@@ -435,7 +430,6 @@ def test_get_gwflow_job_list_stops_on_repeated_cursor(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': [],
                     'is_pruned': False,
-                    'ligo_only': False,
                     'current_history_id': 'h1',
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
@@ -493,7 +487,6 @@ def test_gwflow_job_fresh_list_defaults():
         schema_version='1.0',
         libraries='lib1',
         is_pruned=True,
-        ligo_only=True,
         current_history_id='h1',
         current_history_timestamp='2023-01-01T00:00:00',
         last_updated='2023-01-01T00:00:00'
@@ -504,7 +497,6 @@ def test_gwflow_job_fresh_list_defaults():
         schema_version='1.0',
         libraries='lib2',
         is_pruned=False,
-        ligo_only=False,
         current_history_id='h2',
         current_history_timestamp='2023-01-02T00:00:00',
         last_updated='2023-01-02T00:00:00'
@@ -522,7 +514,6 @@ def test_gwflow_job_dataclass_equality():
         schema_version='1.0',
         libraries='lib1',
         is_pruned=True,
-        ligo_only=True,
         current_history_id='h1',
         current_history_timestamp='2023-01-01T00:00:00',
         last_updated='2023-01-01T00:00:00'
@@ -533,7 +524,6 @@ def test_gwflow_job_dataclass_equality():
         schema_version='1.0',
         libraries='lib1',
         is_pruned=True,
-        ligo_only=True,
         current_history_id='h1',
         current_history_timestamp='2023-01-01T00:00:00',
         last_updated='2023-01-01T00:00:00'
@@ -544,7 +534,6 @@ def test_gwflow_job_dataclass_equality():
         schema_version='1.0',
         libraries='lib1',
         is_pruned=True,
-        ligo_only=True,
         current_history_id='h1',
         current_history_timestamp='2023-01-01T00:00:00',
         last_updated='2023-01-01T00:00:00'
@@ -583,7 +572,6 @@ def test_gwflow_job_from_dict_defaults():
         'schema_version': '1.0',
         'libraries': 'lib1',
         'is_pruned': True,
-        'ligo_only': True,
         'current_history_id': 'h1',
         'current_history_timestamp': '2023-01-01T00:00:00',
         'last_updated': '2023-01-01T00:00:00',
@@ -593,3 +581,81 @@ def test_gwflow_job_from_dict_defaults():
     assert job.bilby_jobs == []
     assert job.creation_time is None
     assert job.event_id is None
+
+
+def _removed_job_name():
+    return "ligo_" + "only"
+
+
+def _removed_job_graphql_name():
+    return "ligo" + "Only"
+
+
+def test_gwflow_job_field_free_model_shape():
+    job = GWFlowJob.from_dict({
+        "id": "job1",
+        "sname": "S230101a",
+        "schemaVersion": "1.0",
+        "libraries": ["lib1"],
+        "isPruned": False,
+        "currentHistoryId": "h1",
+        "currentHistoryTimestamp": "2023-01-01T00:00:00",
+        "lastUpdated": "2023-01-01T00:00:00",
+    })
+
+    assert job.sname == "S230101a"
+    assert not hasattr(job, _removed_job_name())
+
+
+def test_upsert_gwflow_job_excludes_removed_parameter(mock_gwdc_init, mocker):
+    mock_request = mocker.Mock(return_value={
+        "upsert_gwflow_job": {
+            "result": {
+                "gwflow_job_id": "job1",
+                "sname": "S230101a",
+                "created": False,
+                "files_pending": [],
+            }
+        }
+    })
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+    gwc = GWCloud(token="my_token")
+
+    gwc.upsert_gwflow_job("S230101a", is_pruned=False)
+
+    params = mock_request.call_args.kwargs["variables"]["input"]["params"]
+    assert _removed_job_graphql_name() not in params
+
+
+def test_removed_gwflow_keyword_raises_type_error(mock_gwdc_init):
+    gwc = GWCloud(token="my_token")
+
+    with pytest.raises(TypeError):
+        gwc.upsert_gwflow_job("S230101a", **{_removed_job_name(): True})
+
+
+def test_get_gwflow_job_list_query_excludes_removed_field(mock_gwdc_init, mocker):
+    mock_request = mocker.Mock(return_value={
+        "gwflow_jobs": {
+            "edges": [],
+            "page_info": {"has_next_page": False, "end_cursor": None},
+        }
+    })
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+    gwc = GWCloud(token="my_token")
+
+    gwc.get_gwflow_job_list()
+
+    query = mock_request.call_args.kwargs["query"]
+    assert _removed_job_graphql_name() not in query
+
+
+def test_get_gwflow_job_detail_query_excludes_removed_field(mock_gwdc_init, mocker):
+    mock_request = mocker.Mock(return_value={"gwflow_job_by_sname": None})
+    mocker.patch("gwdc_python.gwdc.GWDC.request", mock_request)
+    gwc = GWCloud(token="my_token")
+
+    gwc.get_gwflow_job("S230101a")
+
+    query = mock_request.call_args.kwargs["query"]
+    assert _removed_job_graphql_name() not in query
