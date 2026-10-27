@@ -77,7 +77,7 @@ def test_upsert_gwflow_job_full(mock_gwdc_init, mocker):
         libraries=['lib1', 'lib2'],
         is_pruned=False,
         event_id='GW123',
-        current_history_id='hist1',
+        current_version_number=7,
         current_history_timestamp=dt,
         files=[{'analysis_uid': 'uid1', 'path': '/p', 'file_name': 'f.txt', 'file_size': 100, 'md5_sum': 'abc'}]
     )
@@ -93,6 +93,8 @@ def test_upsert_gwflow_job_full(mock_gwdc_init, mocker):
     params = call_args['variables']['input']['params']
     
     assert params['metadata'] == json.dumps({'key': 'value'})
+    assert params['currentVersionNumber'] == 7
+    assert 'currentHistoryId' not in params
     assert params['currentHistoryTimestamp'] == dt.isoformat()
     assert params['files'] == [
         {'analysisUid': 'uid1', 'path': '/p', 'fileName': 'f.txt', 'fileSize': 100, 'md5Sum': 'abc'}
@@ -234,7 +236,7 @@ def test_get_gwflow_job_list_paginates(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib1'],
                     'is_pruned': False,
-                    'current_history_id': 'h1',
+                    'currentVersionNumber': 7,
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
                     'event_id': None
@@ -252,7 +254,7 @@ def test_get_gwflow_job_list_paginates(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib2'],
                     'is_pruned': False,
-                    'current_history_id': 'h2',
+                    'current_version_number': 2,
                     'current_history_timestamp': '2023-01-02T00:00:00',
                     'last_updated': '2023-01-02T00:00:00',
                     'event_id': None
@@ -284,7 +286,7 @@ def test_get_gwflow_job_list_summary_parsing(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib1'],
                     'is_pruned': True,
-                    'current_history_id': 'h1',
+                    'currentVersionNumber': 7,
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
                     'event_id': None
@@ -295,7 +297,7 @@ def test_get_gwflow_job_list_summary_parsing(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib2'],
                     'is_pruned': False,
-                    'current_history_id': 'h2',
+                    'current_version_number': 2,
                     'current_history_timestamp': '2023-01-02T00:00:00',
                     'last_updated': '2023-01-02T00:00:00',
                     'event_id': {
@@ -329,7 +331,7 @@ def test_get_gwflow_job_detail(mock_gwdc_init, mocker):
             'schema_version': '1.0',
             'libraries': ['lib1'],
             'is_pruned': False,
-            'current_history_id': 'h1',
+            'currentVersionNumber': 7,
             'current_history_timestamp': '2023-01-01T00:00:00',
             'creation_time': '2023-01-01T00:00:00',
             'last_updated': '2023-01-01T00:00:00',
@@ -351,6 +353,7 @@ def test_get_gwflow_job_detail(mock_gwdc_init, mocker):
 
     assert isinstance(job, GWFlowJob)
     assert job.sname == 'S230101a'
+    assert job.current_version_number == 7
     assert len(job.files) == 2
     assert isinstance(job.files[0], GWFlowFile)
     assert job.files[0].id == 'f1'
@@ -405,7 +408,7 @@ def test_get_gwflow_job_list_stops_on_none_cursor(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': [],
                     'is_pruned': False,
-                    'current_history_id': 'h1',
+                    'currentVersionNumber': 7,
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
                     'event_id': None
@@ -434,7 +437,7 @@ def test_get_gwflow_job_list_stops_on_repeated_cursor(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': [],
                     'is_pruned': False,
-                    'current_history_id': 'h1',
+                    'currentVersionNumber': 7,
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
                     'event_id': None
@@ -491,7 +494,7 @@ def test_gwflow_job_fresh_list_defaults():
         schema_version='1.0',
         libraries='lib1',
         is_pruned=True,
-        current_history_id='h1',
+        current_version_number=1,
         current_history_timestamp='2023-01-01T00:00:00',
         last_updated='2023-01-01T00:00:00'
     )
@@ -501,7 +504,7 @@ def test_gwflow_job_fresh_list_defaults():
         schema_version='1.0',
         libraries='lib2',
         is_pruned=False,
-        current_history_id='h2',
+        current_version_number=2,
         current_history_timestamp='2023-01-02T00:00:00',
         last_updated='2023-01-02T00:00:00'
     )
@@ -518,7 +521,7 @@ def test_gwflow_job_dataclass_equality():
         schema_version='1.0',
         libraries='lib1',
         is_pruned=True,
-        current_history_id='h1',
+        current_version_number=1,
         current_history_timestamp='2023-01-01T00:00:00',
         last_updated='2023-01-01T00:00:00'
     )
@@ -528,7 +531,7 @@ def test_gwflow_job_dataclass_equality():
         schema_version='1.0',
         libraries='lib1',
         is_pruned=True,
-        current_history_id='h1',
+        current_version_number=1,
         current_history_timestamp='2023-01-01T00:00:00',
         last_updated='2023-01-01T00:00:00'
     )
@@ -538,7 +541,7 @@ def test_gwflow_job_dataclass_equality():
         schema_version='1.0',
         libraries='lib1',
         is_pruned=True,
-        current_history_id='h1',
+        current_version_number=1,
         current_history_timestamp='2023-01-01T00:00:00',
         last_updated='2023-01-01T00:00:00'
     )
@@ -576,7 +579,7 @@ def test_gwflow_job_from_dict_defaults():
         'schema_version': '1.0',
         'libraries': 'lib1',
         'is_pruned': True,
-        'current_history_id': 'h1',
+        'current_version_number': 1,
         'current_history_timestamp': '2023-01-01T00:00:00',
         'last_updated': '2023-01-01T00:00:00',
         'event_id': None
@@ -599,14 +602,14 @@ def test_gwflow_job_exact_public_fields_and_construction():
         "schema_version": "1.0",
         "libraries": ["lib1"],
         "is_pruned": False,
-        "current_history_id": "h1",
+        "current_version_number": 1,
         "current_history_timestamp": "2023-01-01T00:00:00",
         "last_updated": "2023-01-01T00:00:00",
     }
 
     assert [field.name for field in dataclasses.fields(GWFlowJob)] == [
         "id", "sname", "schema_version", "libraries", "is_pruned",
-        "current_history_id", "current_history_timestamp", "last_updated",
+        "current_version_number", "current_history_timestamp", "last_updated",
         "creation_time", "event_id", "files", "bilby_jobs",
     ]
     assert GWFlowJob(**payload) == GWFlowJob(
@@ -615,7 +618,7 @@ def test_gwflow_job_exact_public_fields_and_construction():
         schema_version="1.0",
         libraries=["lib1"],
         is_pruned=False,
-        current_history_id="h1",
+        current_version_number=1,
         current_history_timestamp="2023-01-01T00:00:00",
         last_updated="2023-01-01T00:00:00",
     )
@@ -624,7 +627,7 @@ def test_gwflow_job_exact_public_fields_and_construction():
 def test_upsert_gwflow_job_exact_signature():
     assert list(inspect.signature(GWCloud.upsert_gwflow_job).parameters) == [
         "self", "sname", "schema_version", "metadata", "libraries",
-        "is_pruned", "event_id", "current_history_id",
+        "is_pruned", "event_id", "current_version_number",
         "current_history_timestamp", "files",
     ]
 
@@ -650,7 +653,7 @@ def test_upsert_gwflow_job_exact_variables(mock_gwdc_init, mocker):
         libraries=["lib1"],
         is_pruned=False,
         event_id="GW123",
-        current_history_id="hist1",
+        current_version_number=1,
         current_history_timestamp=timestamp,
         files=[{
             "analysis_uid": "uid1",
@@ -670,7 +673,7 @@ def test_upsert_gwflow_job_exact_variables(mock_gwdc_init, mocker):
                 "libraries": ["lib1"],
                 "isPruned": False,
                 "eventId": "GW123",
-                "currentHistoryId": "hist1",
+                "currentVersionNumber": 1,
                 "currentHistoryTimestamp": timestamp.isoformat(),
                 "files": [{
                     "analysisUid": "uid1",
@@ -691,7 +694,7 @@ def test_get_gwflow_job_list_exact_query(mock_gwdc_init, mocker):
             gwflowJobs(search: $search, timeRange: $timeRange,
                        includePruned: $includePruned, cursor: $cursor, count: $count) {
                 edges { node { id sname schemaVersion libraries isPruned
-                               currentHistoryId currentHistoryTimestamp lastUpdated
+                               currentVersionNumber currentHistoryTimestamp lastUpdated
                                eventId { eventId triggerId nickname gpsTime } }
                       cursor }
                 pageInfo { hasNextPage endCursor }
@@ -715,7 +718,7 @@ def test_get_gwflow_job_detail_exact_query(mock_gwdc_init, mocker):
     expected_query = """
         query GwflowJobBySname($sname: String!) {
             gwflowJobBySname(sname: $sname) {
-                id sname schemaVersion libraries isPruned currentHistoryId
+                id sname schemaVersion libraries isPruned currentVersionNumber
                 currentHistoryTimestamp creationTime lastUpdated
                 eventId { eventId triggerId nickname gpsTime }
                 files { id analysisUid path fileName fileSize uploaded downloadToken }
