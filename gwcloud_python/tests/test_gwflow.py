@@ -236,7 +236,7 @@ def test_get_gwflow_job_list_paginates(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib1'],
                     'is_pruned': False,
-                    'currentVersionNumber': 7,
+                    'current_version_number': 7,
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
                     'event_id': None
@@ -271,6 +271,7 @@ def test_get_gwflow_job_list_paginates(mock_gwdc_init, mocker):
 
     assert len(jobs) == 2
     assert all(isinstance(job, GWFlowJob) for job in jobs)
+    assert [job.current_version_number for job in jobs] == [7, 2]
     assert mock_request.call_count == 2
     second_call_args = mock_request.call_args_list[1][1]
     assert second_call_args['variables']['cursor'] == 'cursor2'
@@ -286,7 +287,7 @@ def test_get_gwflow_job_list_summary_parsing(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': ['lib1'],
                     'is_pruned': True,
-                    'currentVersionNumber': 7,
+                    'current_version_number': 7,
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
                     'event_id': None
@@ -331,7 +332,7 @@ def test_get_gwflow_job_detail(mock_gwdc_init, mocker):
             'schema_version': '1.0',
             'libraries': ['lib1'],
             'is_pruned': False,
-            'currentVersionNumber': 7,
+            'current_version_number': 7,
             'current_history_timestamp': '2023-01-01T00:00:00',
             'creation_time': '2023-01-01T00:00:00',
             'last_updated': '2023-01-01T00:00:00',
@@ -408,7 +409,7 @@ def test_get_gwflow_job_list_stops_on_none_cursor(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': [],
                     'is_pruned': False,
-                    'currentVersionNumber': 7,
+                    'current_version_number': 7,
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
                     'event_id': None
@@ -437,7 +438,7 @@ def test_get_gwflow_job_list_stops_on_repeated_cursor(mock_gwdc_init, mocker):
                     'schema_version': '1.0',
                     'libraries': [],
                     'is_pruned': False,
-                    'currentVersionNumber': 7,
+                    'current_version_number': 7,
                     'current_history_timestamp': '2023-01-01T00:00:00',
                     'last_updated': '2023-01-01T00:00:00',
                     'event_id': None
@@ -593,6 +594,20 @@ def test_gwflow_job_from_dict_defaults():
 
 def _normalize(query: str) -> str:
     return re.sub(r"\s+", " ", query).strip()
+
+
+def test_gwflow_job_from_dict_accepts_camel_case_current_version_number():
+    job = GWFlowJob.from_dict({
+        "id": "job1",
+        "sname": "S230101a",
+        "schema_version": "1.0",
+        "libraries": "lib1",
+        "is_pruned": False,
+        "currentVersionNumber": 7,
+        "currentHistoryTimestamp": "2023-01-01T00:00:00",
+        "lastUpdated": "2023-01-01T00:00:00",
+    })
+    assert job.current_version_number == 7
 
 
 def test_gwflow_job_exact_public_fields_and_construction():
