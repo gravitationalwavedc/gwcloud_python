@@ -910,8 +910,8 @@ class GWCloud:
     def upsert_gwflow_job(
         self, sname, *, schema_version=None, metadata=None,
         libraries=None, is_pruned=None,
-        event_id=None, current_history_id=None,
-        current_history_timestamp=None, files=None
+        event_id=None,
+        current_version_number=None, current_history_timestamp=None, files=None
     ) -> 'GWFlowJobUpsertResult':
         """Upsert a GWFlow job record (transactional get-or-create by sname).
 
@@ -929,8 +929,8 @@ class GWCloud:
             Whether the job is pruned, by default None
         event_id : str, optional
             Event ID associated with the job, by default None
-        current_history_id : str, optional
-            ID of the current history record, by default None
+        current_version_number : int, optional
+            Integer version number of the current history record, by default None
         current_history_timestamp : str or datetime, optional
             Timestamp of the current history record (ISO 8601 or datetime), by default None
         files : list of dict, optional
@@ -967,8 +967,8 @@ class GWCloud:
             params["isPruned"] = is_pruned
         if event_id is not None:
             params["eventId"] = event_id
-        if current_history_id is not None:
-            params["currentHistoryId"] = current_history_id
+        if current_version_number is not None:
+            params["currentVersionNumber"] = current_version_number
         if current_history_timestamp is not None:
             if hasattr(current_history_timestamp, 'isoformat'):
                 params["currentHistoryTimestamp"] = current_history_timestamp.isoformat()
@@ -1099,7 +1099,7 @@ class GWCloud:
                 gwflowJobs(search: $search, timeRange: $timeRange,
                            includePruned: $includePruned, cursor: $cursor, count: $count) {
                     edges { node { id sname schemaVersion libraries isPruned
-                                   currentHistoryId currentHistoryTimestamp lastUpdated
+                                   currentVersionNumber currentHistoryTimestamp lastUpdated
                                    eventId { eventId triggerId nickname gpsTime } }
                           cursor }
                     pageInfo { hasNextPage endCursor }
@@ -1149,7 +1149,7 @@ class GWCloud:
         query = """
             query GwflowJobBySname($sname: String!) {
                 gwflowJobBySname(sname: $sname) {
-                    id sname schemaVersion libraries isPruned currentHistoryId
+                    id sname schemaVersion libraries isPruned currentVersionNumber
                     currentHistoryTimestamp creationTime lastUpdated
                     eventId { eventId triggerId nickname gpsTime }
                     files { id analysisUid path fileName fileSize uploaded downloadToken }
